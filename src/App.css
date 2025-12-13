@@ -1,0 +1,68 @@
+.screen {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #e8e3d8;
+}
+
+.terminal {
+  max-width: 760px;
+  width: 90%;
+  padding: 40px;
+  background: #f4f1ea;
+  color: #1f1b16;
+  border: 1px solid #c8c1b8;
+  font-family: "Courier New", monospace;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  position: relative;
+}
+
+/* Kağıt hissi */
+.terminal::after {
+  content: \"\";
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(rgba(0,0,0,0.03) 1px, transparent 1px);
+  background-size: 3px 3px;
+  pointer-events: none;
+}
+
+.header {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #6f675d;
+  margin-bottom: 24px;
+}
+
+.date {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+
+.section {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #6f675d;
+  margin-bottom: 24px;
+}
+
+.events li {
+  padding: 10px 0;
+  border-bottom: 1px dotted #c8c1b8;
+}
+
+.year {
+  color: #8b5e34;
+  font-weight: bold;
+}
+
+.footer {
+  margin-top: 32px;
+  font-size: 11px;
+  color: #6f675d;
+  text-align: right;
+}
