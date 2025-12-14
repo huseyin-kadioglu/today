@@ -1,4 +1,3 @@
-// App.jsx
 import { useEffect, useState } from "react";
 import "./App.css";
 
@@ -23,17 +22,19 @@ export default function App() {
       const parsed = [];
 
       rows.forEach((r) => {
-        const dateCell = r.c[0]?.v; // date
+        const dateCell = r.c[0]?.v;
         const year = r.c[1]?.v;
-        const note = r.c[2]?.v;
+        const event = r.c[2]?.v;
+        const stoic = r.c[3]?.v;
 
         if (dateCell) currentDate = String(dateCell).padStart(4, "0");
 
-        if (currentDate && year && note) {
+        if (currentDate && year && event) {
           parsed.push({
             date: currentDate,
             year,
-            text: note,
+            text: event,
+            stoic: stoic || null,
           });
         }
       });
@@ -54,11 +55,17 @@ export default function App() {
     month: "long",
   });
 
+  const stoicNote = events.find((e) => e.stoic)?.stoic;
+
   return (
     <div className="screen">
       <div className="terminal">
         <div className="header">ARCHIVE://TODAY</div>
+
         <h1 className="date">{todayTitle}</h1>
+
+        {stoicNote && <p className="stoic">{stoicNote}</p>}
+
         <p className="section">BUGÜN TARİHTE YAŞANANLAR</p>
 
         {events.length === 0 ? (
