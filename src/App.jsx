@@ -9,6 +9,10 @@ export default function App() {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
+    document.title = `Bugün Tarihte Ne Oldu? | ${todayTitle}`;
+  }, [todayTitle]);
+
+  useEffect(() => {
     const fetchSheet = async () => {
       const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
       const res = await fetch(url);
