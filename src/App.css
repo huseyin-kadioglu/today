@@ -4,18 +4,19 @@ body {
 }
 
 .screen {
-  height: 100vh;
-  width: 100vw;
+  min-height: 100svh; /* 🔥 önemli */
+  width: 100%;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* merkezleme yerine */
   background: #e8e3d8;
+  padding: 24px 12px; /* mobil nefes */
 }
 
 .terminal {
   max-width: 760px;
-  width: 90%;
-  padding: 40px;
+  width: 100%;
+  padding: 24px;
   background: #f4f1ea;
   color: #1f1b16;
   border: 1px solid #c8c1b8;
@@ -80,4 +81,27 @@ body {
   color: rgba(31, 27, 22, 0.55);
   margin: 16px 0 28px;
   line-height: 1.7;
+}
+
+@media (max-width: 600px) {
+  .terminal {
+    padding: 20px 16px;
+  }
+
+  .date {
+    font-size: 28px;
+  }
+
+  .section {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+
+  .events li {
+    margin-bottom: 14px;
+  }
+
+  .stoic {
+    font-size: 0.8rem;
+  }
 }
