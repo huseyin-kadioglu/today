@@ -80,7 +80,7 @@ export default function App() {
           </ul>
         )}
 
-        <div className="footer">ARCHIVE SOURCE: GOOGLE SHEETS</div>
+        <div className="footer">ARCHIVE SOURCE: WIKI</div>
       </div>
     </div>
   );
