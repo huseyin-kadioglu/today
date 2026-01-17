@@ -1,107 +1,234 @@
+/* ======================
+   GLOBAL
+====================== */
+
 body {
+  margin: 0;
+  background: #e8e3d8;
+  color: #1f1b16;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-family: "IBM Plex Mono", monospace;
 }
 
+/* ======================
+   SCREEN
+====================== */
+
 .screen {
-  min-height: 100svh; /* 🔥 önemli */
+  min-height: 100svh;
   width: 100%;
   display: flex;
   justify-content: center;
-  align-items: flex-start; /* merkezleme yerine */
-  background: #e8e3d8;
-  padding: 24px 12px; /* mobil nefes */
+  align-items: flex-start;
+  padding: 24px 12px;
 }
+
+/* ======================
+   TERMINAL / ARCHIVE
+====================== */
 
 .terminal {
   max-width: 760px;
   width: 100%;
-  padding: 24px;
+  padding: 26px 24px 32px;
   background: #f4f1ea;
   color: #1f1b16;
   border: 1px solid #c8c1b8;
-  font-family: "IBM Plex Mono", monospace;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
   position: relative;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.14);
 }
 
-
-/* Kağıt hissi */
+/* Kağıt dokusu – çok hafif */
 .terminal::after {
-  content: \"\";
+  content: "";
   position: absolute;
   inset: 0;
-  background-image: 
-    radial-gradient(rgba(0,0,0,0.03) 1px, transparent 1px);
+  background-image:
+    radial-gradient(rgba(0,0,0,0.025) 1px, transparent 1px);
   background-size: 3px 3px;
   pointer-events: none;
 }
+
+/* ======================
+   HEADER
+====================== */
 
 .header {
   font-size: 11px;
   letter-spacing: 2px;
   color: #6f675d;
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 }
 
-.date {
-  font-size: 36px;
-  margin-bottom: 8px;
+/* ======================
+   DATE PICKER
+====================== */
+
+.picker {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 18px 0 26px;
 }
 
-.section {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #6f675d;
-  margin-bottom: 24px;
-}
-
-.events li {
-  padding: 10px 0;
-  border-bottom: 1px dotted #c8c1b8;
-}
-
-.year {
-  color: #8b5e34;
-  font-weight: bold;
-}
-
-.footer {
-  margin-top: 32px;
+.picker::before {
+  content: "SET DATE >";
   font-size: 11px;
   color: #6f675d;
-  text-align: right;
+  letter-spacing: 1px;
 }
+
+.picker select {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #c8c1b8;
+  padding: 6px 18px 6px 2px;
+
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #1f1b16;
+
+  cursor: pointer;
+}
+
+.picker select {
+  background-image:
+    linear-gradient(45deg, transparent 50%, #6f675d 50%),
+    linear-gradient(135deg, #6f675d 50%, transparent 50%);
+  background-position:
+    calc(100% - 10px) 55%,
+    calc(100% - 5px) 55%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.picker select:hover {
+  border-bottom-color: #8b5e34;
+}
+
+.picker select:focus {
+  outline: none;
+  border-bottom-color: #1f1b16;
+}
+
+/* ======================
+   STOIC NOTE
+====================== */
 
 .stoic {
   font-family: "Libre Baskerville", serif;
   font-style: italic;
   font-size: 0.9rem;
   color: rgba(31, 27, 22, 0.55);
-  margin: 16px 0 28px;
   line-height: 1.7;
+  margin: 14px 0 28px;
 }
+
+/* ======================
+   SECTION TITLE
+====================== */
+
+.section {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #6f675d;
+  margin-bottom: 18px;
+}
+
+/* ======================
+   EVENTS
+====================== */
+
+.events {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.events li {
+  padding: 10px 0;
+  border-bottom: 1px dotted #c8c1b8;
+  line-height: 1.6;
+
+  /* bilinçli, sessiz giriş */
+  animation: archiveFade 0.35s ease-out both;
+}
+
+.year {
+  color: #8b5e34;
+  font-weight: 500;
+  margin-right: 6px;
+}
+
+/* Yavaş ve sakin */
+.events li:nth-child(1) { animation-delay: 0.04s; }
+.events li:nth-child(2) { animation-delay: 0.08s; }
+.events li:nth-child(3) { animation-delay: 0.12s; }
+.events li:nth-child(4) { animation-delay: 0.16s; }
+
+/* ======================
+   EMPTY STATE
+====================== */
+
+.empty {
+  font-size: 13px;
+  color: #6f675d;
+  font-style: italic;
+}
+
+/* ======================
+   FOOTER
+====================== */
+
+.footer {
+  margin-top: 30px;
+  font-size: 11px;
+  color: #6f675d;
+  text-align: right;
+}
+
+/* ======================
+   ANIMATIONS
+====================== */
+
+@keyframes archiveFade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ======================
+   MOBILE
+====================== */
 
 @media (max-width: 600px) {
   .terminal {
-    padding: 20px 16px;
-  }
-
-  .date {
-    font-size: 28px;
+    padding: 22px 18px;
   }
 
   .section {
     font-size: 12px;
-    margin-bottom: 16px;
-  }
-
-  .events li {
-    margin-bottom: 14px;
   }
 
   .stoic {
-    font-size: 0.8rem;
+    font-size: 0.82rem;
+  }
+
+  .picker {
+    gap: 10px;
+  }
+
+  .picker select {
+    font-size: 11px;
   }
 }

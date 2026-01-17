@@ -1,13 +1,42 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import "./App.css";
 
-// Google Sheets ayarları
 const SHEET_ID = "1yHFAy4yCOkEfDpJS0l8HV1jwI8cwJz3A4On6yJvblgQ";
-const SHEET_NAME = "Sheet1"; // gerekirse değiştir
+const SHEET_NAME = "Sheet1";
 
 export default function App() {
-  const [events, setEvents] = useState([]);
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, "0");
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
 
+  const [allEvents, setAllEvents] = useState([]);
+  const [selectedDay, setSelectedDay] = useState(dd);
+  const [selectedMonth, setSelectedMonth] = useState(mm);
+
+  // Arşiv yazım state'leri
+  const [visibleEvents, setVisibleEvents] = useState([]);
+  const [visibleStoic, setVisibleStoic] = useState(null);
+
+  /* -------------------- KLAVYE -------------------- */
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "ArrowRight") {
+        setSelectedDay(d =>
+          String(Math.min(parseInt(d) + 1, 31)).padStart(2, "0")
+        );
+      }
+      if (e.key === "ArrowLeft") {
+        setSelectedDay(d =>
+          String(Math.max(parseInt(d) - 1, 1)).padStart(2, "0")
+        );
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
+
+  /* -------------------- DATA FETCH -------------------- */
   useEffect(() => {
     const fetchSheet = async () => {
       const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
@@ -15,13 +44,10 @@ export default function App() {
       const text = await res.text();
       const json = JSON.parse(text.substring(47).slice(0, -2));
 
-      const rows = json.table.rows;
-
-      // Excel formatını normalize et
       let currentDate = null;
       const parsed = [];
 
-      rows.forEach((r) => {
+      json.table.rows.forEach((r) => {
         const dateCell = r.c[0]?.v;
         const year = r.c[1]?.v;
         const event = r.c[2]?.v;
@@ -39,40 +65,96 @@ export default function App() {
         }
       });
 
-      const now = new Date();
-      const dd = String(now.getDate()).padStart(2, "0");
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      const todayKey = `${dd}${mm}`;
-
-      setEvents(parsed.filter((e) => e.date === todayKey));
+      setAllEvents(parsed);
     };
 
     fetchSheet();
   }, []);
 
-  const todayTitle = new Date().toLocaleDateString("tr-TR", {
-    day: "numeric",
-    month: "long",
-  });
+  /* -------------------- FİLTRE -------------------- */
+  const filteredEvents = useMemo(() => {
+    const key = `${selectedDay}${selectedMonth}`;
+    return allEvents.filter(e => e.date === key);
+  }, [allEvents, selectedDay, selectedMonth]);
 
-  const stoicNote = events.find((e) => e.stoic)?.stoic;
+  const stoicNote = useMemo(() => {
+    return filteredEvents.find(e => e.stoic)?.stoic || null;
+  }, [filteredEvents]);
+
+  /* -------------------- ARŞİV OKUMA EFEKTİ -------------------- */
+  useEffect(() => {
+    setVisibleEvents([]);
+    setVisibleStoic(null);
+
+    if (filteredEvents.length === 0) return;
+
+    let i = 0;
+
+    const interval = setInterval(() => {
+      setVisibleEvents(prev => {
+        if (i >= filteredEvents.length) {
+          clearInterval(interval);
+
+          // Stoic not EN SON, bilinçli gecikmeyle gelsin
+          if (stoicNote) {
+            setTimeout(() => setVisibleStoic(stoicNote), 600);
+          }
+          return prev;
+        }
+
+        const next = [...prev, filteredEvents[i]];
+        i++;
+        return next;
+      });
+    }, 260); // ⏱️ arşiv hızı (220–320 ideal)
+
+    return () => clearInterval(interval);
+  }, [filteredEvents, stoicNote]);
+
+  /* -------------------- UI -------------------- */
+  const months = [
+    { v: "01", n: "Oca" }, { v: "02", n: "Şub" }, { v: "03", n: "Mar" },
+    { v: "04", n: "Nis" }, { v: "05", n: "May" }, { v: "06", n: "Haz" },
+    { v: "07", n: "Tem" }, { v: "08", n: "Ağu" }, { v: "09", n: "Eyl" },
+    { v: "10", n: "Eki" }, { v: "11", n: "Kas" }, { v: "12", n: "Ara" }
+  ];
+
+  const daysInMonth = useMemo(() => {
+    const year = new Date().getFullYear();
+    const count = new Date(year, parseInt(selectedMonth), 0).getDate();
+    return Array.from({ length: count }, (_, i) =>
+      String(i + 1).padStart(2, "0")
+    );
+  }, [selectedMonth]);
 
   return (
     <div className="screen">
       <div className="terminal">
-        <div className="header">ARCHIVE://TODAY</div>
+        <div className="header">ARŞİV://</div>
 
-        <h1 className="date">{todayTitle}</h1>
+        <div className="picker">
+          <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}>
+            {months.map(m => (
+              <option key={m.v} value={m.v}>{m.n}</option>
+            ))}
+          </select>
 
-        {stoicNote && <p className="stoic">{stoicNote}</p>}
+          <select value={selectedDay} onChange={e => setSelectedDay(e.target.value)}>
+            {daysInMonth.map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+        </div>
 
-        <p className="section">BUGÜN TARİHTE YAŞANANLAR</p>
+        {visibleStoic && <p className="stoic">{visibleStoic}</p>}
 
-        {events.length === 0 ? (
-          <p className="empty">Kayıt bulunamadı.</p>
+        <p className="section">ARŞİV KAYITLARI</p>
+
+        {visibleEvents.length === 0 ? (
+          <p className="empty">Kayıtlar taranıyor…</p>
         ) : (
           <ul className="events">
-            {events.map((e, i) => (
+            {visibleEvents.map((e, i) => (
               <li key={i}>
                 <span className="year">{e.year}</span> {e.text}
               </li>
@@ -80,7 +162,9 @@ export default function App() {
           </ul>
         )}
 
-        <div className="footer">ARCHIVE SOURCE: WIKI</div>
+        <div className="footer">
+          RECORD DATE :: {selectedDay}.{selectedMonth}
+        </div>
       </div>
     </div>
   );
