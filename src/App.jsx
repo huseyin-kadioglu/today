@@ -46,45 +46,52 @@ const monthSlug = {
   "07": "temmuz",
   "08": "agustos",
   "09": "eylul",
-  "10": "ekim",
-  "11": "kasim",
-  "12": "aralik",
+  10: "ekim",
+  11: "kasim",
+  12: "aralik",
 };
-
 
 export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const now = new Date();
-  const dd = String(now.getDate()).padStart(2, "0");
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-
   const [allEvents, setAllEvents] = useState([]);
-  const [selectedDay, setSelectedDay] = useState(dd);
-  const [selectedMonth, setSelectedMonth] = useState(mm);
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(null);
 
   const [visibleEvents, setVisibleEvents] = useState([]);
   const [visibleStoic, setVisibleStoic] = useState(null);
 
-  /* -------------------- URL → TARİH -------------------- */
+  /* -------------------- URL → TARİH (TEK KAYNAK) -------------------- */
   useEffect(() => {
     const path = location.pathname.replace("/", "");
-    if (!path) return;
+
+    // URL YOK → BUGÜNE REDIRECT
+    if (!path) {
+      const now = new Date();
+      const d = String(now.getDate()).padStart(2, "0");
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      navigate(`/${d}-${monthSlug[m]}`, { replace: true });
+      return;
+    }
 
     const [day, monthName] = path.split("-");
-    if (day && monthMap[monthName]) {
-      setSelectedDay(day.padStart(2, "0"));
-      setSelectedMonth(monthMap[monthName]);
-    }
-  }, [location.pathname]);
+    const month = monthMap[monthName];
+
+    if (!day || !month) return;
+
+    setSelectedDay(day.padStart(2, "0"));
+    setSelectedMonth(month);
+  }, [location.pathname, navigate]);
 
   /* -------------------- SEO -------------------- */
   useEffect(() => {
+    if (!selectedDay || !selectedMonth) return;
+
     const monthLabel = monthNames[selectedMonth];
     const title = `${selectedDay} ${monthLabel} Tarihte Ne Oldu?`;
     const description = `${selectedDay} ${monthLabel} tarihinde dünyada ve Türkiye’de yaşanan önemli tarihi olaylar.`;
-    const canonical = `https://bugununtarihi.com/${selectedDay}-${monthLabel.toLowerCase()}`;
+    const canonical = `https://bugununtarihi.com.tr/${selectedDay}-${monthSlug[selectedMonth]}`;
 
     document.title = title;
 
@@ -97,17 +104,10 @@ export default function App() {
     document.dispatchEvent(new Event("prerender-ready"));
   }, [selectedDay, selectedMonth]);
 
+  /* -------------------- KLAVYE (GÜN + AY GEÇİŞLİ) -------------------- */
   useEffect(() => {
-    const slug = `${selectedDay}-${monthSlug[selectedMonth]}`;
-    const currentPath = location.pathname.replace("/", "");
+    if (!selectedDay || !selectedMonth) return;
 
-    if (currentPath !== slug) {
-      navigate(`/${slug}`, { replace: true });
-    }
-  }, [selectedDay, selectedMonth]);
-
-  /* -------------------- KLAVYE -------------------- */
-  useEffect(() => {
     const handleKey = (e) => {
       if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
 
@@ -117,21 +117,19 @@ export default function App() {
         parseInt(selectedDay),
       );
 
-      if (e.key === "ArrowRight") {
-        current.setDate(current.getDate() + 1);
-      }
+      current.setDate(
+        e.key === "ArrowRight" ? current.getDate() + 1 : current.getDate() - 1,
+      );
 
-      if (e.key === "ArrowLeft") {
-        current.setDate(current.getDate() - 1);
-      }
+      const d = String(current.getDate()).padStart(2, "0");
+      const m = String(current.getMonth() + 1).padStart(2, "0");
 
-      setSelectedDay(String(current.getDate()).padStart(2, "0"));
-      setSelectedMonth(String(current.getMonth() + 1).padStart(2, "0"));
+      navigate(`/${d}-${monthSlug[m]}`);
     };
 
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [selectedDay, selectedMonth]);
+  }, [selectedDay, selectedMonth, navigate]);
 
   /* -------------------- DATA FETCH -------------------- */
   useEffect(() => {
@@ -170,13 +168,14 @@ export default function App() {
 
   /* -------------------- FİLTRE -------------------- */
   const filteredEvents = useMemo(() => {
-    const key = `${selectedDay}${selectedMonth}`;
-    return allEvents.filter((e) => e.date === key);
+    if (!selectedDay || !selectedMonth) return [];
+    return allEvents.filter((e) => e.date === `${selectedDay}${selectedMonth}`);
   }, [allEvents, selectedDay, selectedMonth]);
 
-  const stoicNote = useMemo(() => {
-    return filteredEvents.find((e) => e.stoic)?.stoic || null;
-  }, [filteredEvents]);
+  const stoicNote = useMemo(
+    () => filteredEvents.find((e) => e.stoic)?.stoic || null,
+    [filteredEvents],
+  );
 
   /* -------------------- ARŞİV OKUMA -------------------- */
   useEffect(() => {
@@ -199,29 +198,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, [filteredEvents, stoicNote]);
 
-  /* -------------------- UI -------------------- */
-  const months = [
-    { v: "01", n: "Oca" },
-    { v: "02", n: "Şub" },
-    { v: "03", n: "Mar" },
-    { v: "04", n: "Nis" },
-    { v: "05", n: "May" },
-    { v: "06", n: "Haz" },
-    { v: "07", n: "Tem" },
-    { v: "08", n: "Ağu" },
-    { v: "09", n: "Eyl" },
-    { v: "10", n: "Eki" },
-    { v: "11", n: "Kas" },
-    { v: "12", n: "Ara" },
-  ];
-
-  const daysInMonth = useMemo(() => {
-    const year = new Date().getFullYear();
-    const count = new Date(year, parseInt(selectedMonth), 0).getDate();
-    return Array.from({ length: count }, (_, i) =>
-      String(i + 1).padStart(2, "0"),
-    );
-  }, [selectedMonth]);
+  if (!selectedDay || !selectedMonth) return null;
 
   return (
     <div className="screen">
@@ -231,30 +208,6 @@ export default function App() {
           <h1 className="archive-title">
             {selectedDay} {monthNames[selectedMonth]} Tarihte Ne Oldu?
           </h1>
-        </div>
-
-        <div className="picker">
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-          >
-            {months.map((m) => (
-              <option key={m.v} value={m.v}>
-                {m.n}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={selectedDay}
-            onChange={(e) => setSelectedDay(e.target.value)}
-          >
-            {daysInMonth.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
         </div>
 
         {visibleStoic && <p className="stoic">{visibleStoic}</p>}
