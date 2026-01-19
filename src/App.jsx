@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import "./App.css";
