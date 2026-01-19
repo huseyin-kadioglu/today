@@ -1,6 +1,6 @@
 import React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
-import { useLocation } from "react-router-dom";
 import "./App.css";
 
 const SHEET_ID = "1yHFAy4yCOkEfDpJS0l8HV1jwI8cwJz3A4On6yJvblgQ";
@@ -36,8 +36,25 @@ const monthNames = {
   12: "Aralık",
 };
 
+const monthSlug = {
+  "01": "ocak",
+  "02": "subat",
+  "03": "mart",
+  "04": "nisan",
+  "05": "mayis",
+  "06": "haziran",
+  "07": "temmuz",
+  "08": "agustos",
+  "09": "eylul",
+  "10": "ekim",
+  "11": "kasim",
+  "12": "aralik",
+};
+
+
 export default function App() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const now = new Date();
   const dd = String(now.getDate()).padStart(2, "0");
@@ -78,6 +95,15 @@ export default function App() {
     if (canonTag) canonTag.setAttribute("href", canonical);
 
     document.dispatchEvent(new Event("prerender-ready"));
+  }, [selectedDay, selectedMonth]);
+
+  useEffect(() => {
+    const slug = `${selectedDay}-${monthSlug[selectedMonth]}`;
+    const currentPath = location.pathname.replace("/", "");
+
+    if (currentPath !== slug) {
+      navigate(`/${slug}`, { replace: true });
+    }
   }, [selectedDay, selectedMonth]);
 
   /* -------------------- KLAVYE -------------------- */
