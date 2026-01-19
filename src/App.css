@@ -44,8 +44,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background-image:
-    radial-gradient(rgba(0,0,0,0.025) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(0, 0, 0, 0.025) 1px, transparent 1px);
   background-size: 3px 3px;
   pointer-events: none;
 }
@@ -55,10 +54,21 @@ body {
 ====================== */
 
 .header {
+  margin-bottom: 26px;
+}
+
+.archive-label {
   font-size: 11px;
   letter-spacing: 2px;
   color: #6f675d;
-  margin-bottom: 22px;
+  margin-bottom: 6px;
+}
+
+.archive-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin: 0;
 }
 
 /* ======================
@@ -102,7 +112,9 @@ body {
   background-position:
     calc(100% - 10px) 55%,
     calc(100% - 5px) 55%;
-  background-size: 5px 5px, 5px 5px;
+  background-size:
+    5px 5px,
+    5px 5px;
   background-repeat: no-repeat;
 }
 
@@ -115,6 +127,15 @@ body {
   border-bottom-color: #1f1b16;
 }
 
+.picker::after {
+  content: "← → okları ile gün değiştir";
+  font-size: 12px;
+  color: #6f675d;
+  opacity: 0.5;
+  margin-left: 8px;
+}
+
+
 /* ======================
    STOIC NOTE
 ====================== */
@@ -126,6 +147,8 @@ body {
   color: rgba(31, 27, 22, 0.55);
   line-height: 1.7;
   margin: 14px 0 28px;
+  padding-left: 14px;
+  border-left: 2px solid rgba(139, 94, 52, 0.35);
 }
 
 /* ======================
@@ -166,10 +189,23 @@ body {
 }
 
 /* Yavaş ve sakin */
-.events li:nth-child(1) { animation-delay: 0.04s; }
-.events li:nth-child(2) { animation-delay: 0.08s; }
-.events li:nth-child(3) { animation-delay: 0.12s; }
-.events li:nth-child(4) { animation-delay: 0.16s; }
+.events li:nth-child(1) {
+  animation-delay: 0.04s;
+}
+.events li:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.events li:nth-child(3) {
+  animation-delay: 0.12s;
+}
+.events li:nth-child(4) {
+  animation-delay: 0.16s;
+}
+
+.events li:last-child {
+  border-bottom: none;
+}
+
 
 /* ======================
    EMPTY STATE
@@ -190,7 +226,10 @@ body {
   font-size: 11px;
   color: #6f675d;
   text-align: right;
+  letter-spacing: 0.08em;
+  opacity: 0.45;
 }
+
 
 /* ======================
    ANIMATIONS

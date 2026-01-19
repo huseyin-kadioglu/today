@@ -31,9 +31,9 @@ const monthNames = {
   "07": "Temmuz",
   "08": "Ağustos",
   "09": "Eylül",
-  "10": "Ekim",
-  "11": "Kasım",
-  "12": "Aralık",
+  10: "Ekim",
+  11: "Kasım",
+  12: "Aralık",
 };
 
 export default function App() {
@@ -77,28 +77,35 @@ export default function App() {
     const canonTag = document.querySelector('link[rel="canonical"]');
     if (canonTag) canonTag.setAttribute("href", canonical);
 
-    // 👉 prerender sinyali
     document.dispatchEvent(new Event("prerender-ready"));
   }, [selectedDay, selectedMonth]);
 
   /* -------------------- KLAVYE -------------------- */
   useEffect(() => {
     const handleKey = (e) => {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+
+      const current = new Date(
+        new Date().getFullYear(),
+        parseInt(selectedMonth) - 1,
+        parseInt(selectedDay),
+      );
+
       if (e.key === "ArrowRight") {
-        setSelectedDay((d) =>
-          String(Math.min(parseInt(d) + 1, 31)).padStart(2, "0")
-        );
+        current.setDate(current.getDate() + 1);
       }
+
       if (e.key === "ArrowLeft") {
-        setSelectedDay((d) =>
-          String(Math.max(parseInt(d) - 1, 1)).padStart(2, "0")
-        );
+        current.setDate(current.getDate() - 1);
       }
+
+      setSelectedDay(String(current.getDate()).padStart(2, "0"));
+      setSelectedMonth(String(current.getMonth() + 1).padStart(2, "0"));
     };
 
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, []);
+  }, [selectedDay, selectedMonth]);
 
   /* -------------------- DATA FETCH -------------------- */
   useEffect(() => {
@@ -186,14 +193,19 @@ export default function App() {
     const year = new Date().getFullYear();
     const count = new Date(year, parseInt(selectedMonth), 0).getDate();
     return Array.from({ length: count }, (_, i) =>
-      String(i + 1).padStart(2, "0")
+      String(i + 1).padStart(2, "0"),
     );
   }, [selectedMonth]);
 
   return (
     <div className="screen">
       <div className="terminal">
-        <div className="header">ARŞİV://</div>
+        <div className="header">
+          <div className="archive-label">ARŞİV //</div>
+          <h1 className="archive-title">
+            {selectedDay} {monthNames[selectedMonth]} Tarihte Ne Oldu?
+          </h1>
+        </div>
 
         <div className="picker">
           <select
