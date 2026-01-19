@@ -1,27 +1,34 @@
 <!DOCTYPE html>
 <html lang="tr">
   <head>
-    <!-- basics -->
+    <!-- =====================
+         BASICS
+    ====================== -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- SEO title (prerender sırasında değiştirilecek) -->
+    <!-- =====================
+         PRIMARY SEO
+    ====================== -->
     <title>Bugün Tarihte Ne Oldu?</title>
 
-    <!-- SEO description (prerender sırasında değiştirilecek) -->
     <meta
       name="description"
-      content="Günlük tarih arşivi."
+      content="Bugün tarihte ne oldu? Her gün için kısa, sade ve güvenilir tarihsel olaylar. Minimal bir günlük tarih arşivi."
     />
 
-    <!-- canonical (prerender sırasında değiştirilecek) -->
+    <!-- prerender sırasında güncellenecek -->
     <link rel="canonical" href="__CANONICAL__" />
 
-    <!-- favicon & logo -->
+    <!-- =====================
+         FAVICON / LOGO
+    ====================== -->
     <link rel="icon" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
 
-    <!-- Fonts -->
+    <!-- =====================
+         FONTS
+    ====================== -->
     <link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap"
       rel="stylesheet"
@@ -31,31 +38,64 @@
       rel="stylesheet"
     />
 
-    <!-- Open Graph -->
+    <!-- =====================
+         OPEN GRAPH
+    ====================== -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Bugün Tarihte" />
     <meta property="og:title" content="Bugün Tarihte Ne Oldu?" />
     <meta
       property="og:description"
-      content="Her güne özel tarihsel olaylar. Sade, hızlı ve güvenilir bir arşiv."
+      content="Her güne özel tarihsel olaylar. Sade, hızlı ve güvenilir bir tarih arşivi."
     />
-    <meta property="og:url" content="https://bugununtarihi.com/" />
-    <meta property="og:image" content="https://bugununtarihi.com/logo.png" />
-    <meta property="og:site_name" content="Bugün Tarihte" />
+    <meta property="og:url" content="https://bugununtarihi.com.tr/" />
+    <meta property="og:image" content="https://bugununtarihi.com.tr/logo-512.png" />
 
-    <!-- Twitter -->
+    <!-- =====================
+         TWITTER
+    ====================== -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Bugün Tarihte Ne Oldu?" />
     <meta
       name="twitter:description"
-      content="Bugünün tarihine ait önemli olayları keşfet."
+      content="Bugün tarihte yaşanan önemli olayları keşfet."
     />
-    <meta name="twitter:image" content="https://bugununtarihi.com/logo.png" />
+    <meta name="twitter:image" content="https://bugununtarihi.com.tr/logo-512.png" />
 
-    <!-- robots -->
+    <!-- =====================
+         ROBOTS
+    ====================== -->
     <meta name="robots" content="index, follow" />
 
-    <!-- theme -->
+    <!-- =====================
+         THEME
+    ====================== -->
     <meta name="theme-color" content="#f4f1ea" />
+
+    <!-- =====================
+         STRUCTURED DATA (LOGO)
+    ====================== -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Bugün Tarihte",
+        "url": "https://bugununtarihi.com.tr",
+        "logo": "https://bugununtarihi.com.tr/logo-512.png"
+      }
+    </script>
+
+    <!-- =====================
+         STRUCTURED DATA (WEBSITE)
+    ====================== -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Bugün Tarihte",
+        "url": "https://bugununtarihi.com.tr"
+      }
+    </script>
   </head>
 
   <body>
