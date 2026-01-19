@@ -31,9 +31,9 @@ const monthNames = {
   "07": "Temmuz",
   "08": "Ağustos",
   "09": "Eylül",
-  "10": "Ekim",
-  "11": "Kasım",
-  "12": "Aralık",
+  10: "Ekim",
+  11: "Kasım",
+  12: "Aralık",
 };
 
 const monthSlug = {
@@ -46,9 +46,9 @@ const monthSlug = {
   "07": "temmuz",
   "08": "agustos",
   "09": "eylul",
-  "10": "ekim",
-  "11": "kasim",
-  "12": "aralik",
+  10: "ekim",
+  11: "kasim",
+  12: "aralik",
 };
 
 export default function App() {
@@ -171,9 +171,7 @@ export default function App() {
   /* ---------------- FİLTRE ---------------- */
   const filteredEvents = useMemo(() => {
     if (!selectedDay || !selectedMonth) return [];
-    return allEvents.filter(
-      (e) => e.date === `${selectedDay}${selectedMonth}`,
-    );
+    return allEvents.filter((e) => e.date === `${selectedDay}${selectedMonth}`);
   }, [allEvents, selectedDay, selectedMonth]);
 
   const stoicNote = filteredEvents.find((e) => e.stoic)?.stoic || null;
@@ -242,10 +240,10 @@ export default function App() {
 
         {visibleStoic && <p className="stoic">{visibleStoic}</p>}
 
-        <ul>
+        <ul className="events">
           {visibleEvents.map((e, i) => (
             <li key={i}>
-              <strong>{e.year}</strong> — {e.text}
+              <span className="year">{e.year}</span> — <span>{e.text}</span>
             </li>
           ))}
         </ul>
