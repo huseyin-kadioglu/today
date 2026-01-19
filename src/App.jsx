@@ -1,10 +1,43 @@
 import { useEffect, useState, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import "./App.css";
 
 const SHEET_ID = "1yHFAy4yCOkEfDpJS0l8HV1jwI8cwJz3A4On6yJvblgQ";
 const SHEET_NAME = "Sheet1";
 
+const monthMap = {
+  ocak: "01",
+  subat: "02",
+  mart: "03",
+  nisan: "04",
+  mayis: "05",
+  haziran: "06",
+  temmuz: "07",
+  agustos: "08",
+  eylul: "09",
+  ekim: "10",
+  kasim: "11",
+  aralik: "12",
+};
+
+const monthNames = {
+  "01": "Ocak",
+  "02": "Şubat",
+  "03": "Mart",
+  "04": "Nisan",
+  "05": "Mayıs",
+  "06": "Haziran",
+  "07": "Temmuz",
+  "08": "Ağustos",
+  "09": "Eylül",
+  "10": "Ekim",
+  "11": "Kasım",
+  "12": "Aralık",
+};
+
 export default function App() {
+  const location = useLocation();
+
   const now = new Date();
   const dd = String(now.getDate()).padStart(2, "0");
   const mm = String(now.getMonth() + 1).padStart(2, "0");
@@ -13,20 +46,50 @@ export default function App() {
   const [selectedDay, setSelectedDay] = useState(dd);
   const [selectedMonth, setSelectedMonth] = useState(mm);
 
-  // Arşiv yazım state'leri
   const [visibleEvents, setVisibleEvents] = useState([]);
   const [visibleStoic, setVisibleStoic] = useState(null);
+
+  /* -------------------- URL → TARİH -------------------- */
+  useEffect(() => {
+    const path = location.pathname.replace("/", "");
+    if (!path) return;
+
+    const [day, monthName] = path.split("-");
+    if (day && monthMap[monthName]) {
+      setSelectedDay(day.padStart(2, "0"));
+      setSelectedMonth(monthMap[monthName]);
+    }
+  }, [location.pathname]);
+
+  /* -------------------- SEO -------------------- */
+  useEffect(() => {
+    const monthLabel = monthNames[selectedMonth];
+    const title = `${selectedDay} ${monthLabel} Tarihte Ne Oldu?`;
+    const description = `${selectedDay} ${monthLabel} tarihinde dünyada ve Türkiye’de yaşanan önemli tarihi olaylar.`;
+    const canonical = `https://bugununtarihi.com/${selectedDay}-${monthLabel.toLowerCase()}`;
+
+    document.title = title;
+
+    const descTag = document.querySelector('meta[name="description"]');
+    if (descTag) descTag.setAttribute("content", description);
+
+    const canonTag = document.querySelector('link[rel="canonical"]');
+    if (canonTag) canonTag.setAttribute("href", canonical);
+
+    // 👉 prerender sinyali
+    document.dispatchEvent(new Event("prerender-ready"));
+  }, [selectedDay, selectedMonth]);
 
   /* -------------------- KLAVYE -------------------- */
   useEffect(() => {
     const handleKey = (e) => {
       if (e.key === "ArrowRight") {
-        setSelectedDay(d =>
+        setSelectedDay((d) =>
           String(Math.min(parseInt(d) + 1, 31)).padStart(2, "0")
         );
       }
       if (e.key === "ArrowLeft") {
-        setSelectedDay(d =>
+        setSelectedDay((d) =>
           String(Math.max(parseInt(d) - 1, 1)).padStart(2, "0")
         );
       }
@@ -74,49 +137,48 @@ export default function App() {
   /* -------------------- FİLTRE -------------------- */
   const filteredEvents = useMemo(() => {
     const key = `${selectedDay}${selectedMonth}`;
-    return allEvents.filter(e => e.date === key);
+    return allEvents.filter((e) => e.date === key);
   }, [allEvents, selectedDay, selectedMonth]);
 
   const stoicNote = useMemo(() => {
-    return filteredEvents.find(e => e.stoic)?.stoic || null;
+    return filteredEvents.find((e) => e.stoic)?.stoic || null;
   }, [filteredEvents]);
 
-  /* -------------------- ARŞİV OKUMA EFEKTİ -------------------- */
+  /* -------------------- ARŞİV OKUMA -------------------- */
   useEffect(() => {
     setVisibleEvents([]);
     setVisibleStoic(null);
-
     if (filteredEvents.length === 0) return;
 
     let i = 0;
-
     const interval = setInterval(() => {
-      setVisibleEvents(prev => {
+      setVisibleEvents((prev) => {
         if (i >= filteredEvents.length) {
           clearInterval(interval);
-
-          // Stoic not EN SON, bilinçli gecikmeyle gelsin
-          if (stoicNote) {
-            setTimeout(() => setVisibleStoic(stoicNote), 600);
-          }
+          if (stoicNote) setTimeout(() => setVisibleStoic(stoicNote), 600);
           return prev;
         }
-
-        const next = [...prev, filteredEvents[i]];
-        i++;
-        return next;
+        return [...prev, filteredEvents[i++]];
       });
-    }, 260); // ⏱️ arşiv hızı (220–320 ideal)
+    }, 260);
 
     return () => clearInterval(interval);
   }, [filteredEvents, stoicNote]);
 
   /* -------------------- UI -------------------- */
   const months = [
-    { v: "01", n: "Oca" }, { v: "02", n: "Şub" }, { v: "03", n: "Mar" },
-    { v: "04", n: "Nis" }, { v: "05", n: "May" }, { v: "06", n: "Haz" },
-    { v: "07", n: "Tem" }, { v: "08", n: "Ağu" }, { v: "09", n: "Eyl" },
-    { v: "10", n: "Eki" }, { v: "11", n: "Kas" }, { v: "12", n: "Ara" }
+    { v: "01", n: "Oca" },
+    { v: "02", n: "Şub" },
+    { v: "03", n: "Mar" },
+    { v: "04", n: "Nis" },
+    { v: "05", n: "May" },
+    { v: "06", n: "Haz" },
+    { v: "07", n: "Tem" },
+    { v: "08", n: "Ağu" },
+    { v: "09", n: "Eyl" },
+    { v: "10", n: "Eki" },
+    { v: "11", n: "Kas" },
+    { v: "12", n: "Ara" },
   ];
 
   const daysInMonth = useMemo(() => {
@@ -133,15 +195,25 @@ export default function App() {
         <div className="header">ARŞİV://</div>
 
         <div className="picker">
-          <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}>
-            {months.map(m => (
-              <option key={m.v} value={m.v}>{m.n}</option>
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+          >
+            {months.map((m) => (
+              <option key={m.v} value={m.v}>
+                {m.n}
+              </option>
             ))}
           </select>
 
-          <select value={selectedDay} onChange={e => setSelectedDay(e.target.value)}>
-            {daysInMonth.map(d => (
-              <option key={d} value={d}>{d}</option>
+          <select
+            value={selectedDay}
+            onChange={(e) => setSelectedDay(e.target.value)}
+          >
+            {daysInMonth.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
             ))}
           </select>
         </div>
