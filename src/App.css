@@ -190,7 +190,7 @@ body {
 .events li span:not(.year) {
   flex: 1;
   font-size: 14px;
-  color: #1f1b16;
+  color: #3a322b;
 }
 
 .events li:last-child {
