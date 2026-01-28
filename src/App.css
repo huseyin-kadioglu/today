@@ -3,8 +3,8 @@
   --surface:#f4f1ea;
   --text:#1f1b16;
   --muted:#6f675d;
-  --accent:#f4a261;
   --border:#c8c1b8;
+  --accent:#8b5e34;
 }
 
 body{
@@ -13,6 +13,8 @@ body{
   font-family:"IBM Plex Mono", monospace;
   color:var(--text);
 }
+
+/* LAYOUT */
 
 .screen{
   min-height:100vh;
@@ -28,90 +30,147 @@ body{
   border-radius:14px;
   padding:40px 28px;
   border:1px solid var(--border);
+  box-shadow:0 18px 48px rgba(0,0,0,.14);
 }
 
-/* BAŞLIK PICKER */
+/* TITLE PICKER */
+
 .title-picker{
   text-align:center;
   position:relative;
 }
 
-.title-picker button {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 4.2rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: #1f1b16;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  border-bottom: 1px solid transparent;
-  transition: all .25s ease;
+.title-picker button{
+  font-family:"IBM Plex Mono", monospace;
+  font-size:clamp(3rem,6vw,4.4rem);
+  font-weight:500;
+  letter-spacing:.06em;
+  color:var(--text);
+  background:none;
+  border:none;
+  cursor:pointer;
+  position:relative;
 }
 
-.title-picker button:hover {
-  border-bottom-color: #8b5e34;
-  color: #3a322b;
+.title-picker button::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:-6px;
+  width:0%;
+  height:1px;
+  background:var(--accent);
+  transform:translateX(-50%);
+  transition:.25s ease;
 }
 
+.title-picker button:hover::after{
+  width:60%;
+}
+
+/* PICKER PANEL */
 
 .picker-panel{
   position:absolute;
   left:50%;
   transform:translateX(-50%);
-  margin-top:12px;
-  background:var(--surface);
+  margin-top:14px;
+  background:#f7f3ec;
   border:1px solid var(--border);
-  border-radius:10px;
-  padding:10px;
+  border-radius:12px;
+  padding:12px 14px;
   display:flex;
-  gap:8px;
+  gap:12px;
+  box-shadow:0 12px 28px rgba(0,0,0,.12);
 }
 
 .picker-panel select{
-  background:#fdf6f0;
-  border:1px solid var(--border);
-  padding:6px 10px;
-  border-radius:6px;
+  appearance:none;
+  background:transparent;
+  border:none;
+  border-bottom:1px solid var(--border);
+  padding:6px 4px;
   font-family:inherit;
+  font-size:12px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:#3a322b;
+  cursor:pointer;
 }
 
-/* ALT BAŞLIK */
+.picker-panel select:hover{
+  border-bottom-color:var(--accent);
+}
+
+.picker-panel select:focus{
+  outline:none;
+  border-bottom-color:var(--text);
+}
+
+/* SUBTITLE */
+
 .subtitle{
   text-align:center;
-  margin-top:10px;
-  letter-spacing:0.2em;
+  margin-top:12px;
+  letter-spacing:.22em;
+  font-size:.85rem;
   color:var(--muted);
-  font-size:.9rem;
 }
 
 /* STOIC */
+
 .stoic{
-  margin:30px auto 40px;
+  margin:34px auto 44px;
   max-width:620px;
   text-align:center;
   font-style:italic;
   color:var(--muted);
+  line-height:1.5;
 }
+
 .stoic::before{content:"“";}
 .stoic::after{content:"”";}
 
 /* EVENTS */
+
 .events{
   list-style:none;
   padding:0;
   margin:0;
 }
+
 .events li{
   display:grid;
-  grid-template-columns:60px 1fr;
-  gap:18px;
-  padding:12px 0;
-  border-bottom:1px solid var(--border);
+  grid-template-columns:64px 1fr;
+  gap:10px;
+  padding:14px 0;
+  border-bottom:1px dotted var(--border);
+  animation:fadeUp .4s ease-out both;
 }
+
 .year{
   text-align:right;
   font-size:12px;
-  color: #8b5e34;
+  letter-spacing:.10em;
+  color:var(--accent);
+  opacity:.85;
+}
+
+.event-text{
+  font-size:12px;
+  line-height:1.2;
+  color:#3a322b;
+}
+
+/* ANIMATION */
+
+@keyframes fadeUp{
+  from{
+    opacity:0;
+    transform:translateY(6px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
 }
