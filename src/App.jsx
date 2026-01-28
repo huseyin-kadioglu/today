@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState, useMemo } from "react";
 import "./App.css";
 
 const SHEET_ID = "1yHFAy4yCOkEfDpJS0l8HV1jwI8cwJz3A4On6yJvblgQ";
@@ -31,9 +30,9 @@ const monthNames = {
   "07": "Temmuz",
   "08": "Ağustos",
   "09": "Eylül",
-  10: "Ekim",
-  11: "Kasım",
-  12: "Aralık",
+  "10": "Ekim",
+  "11": "Kasım",
+  "12": "Aralık",
 };
 
 const monthSlug = {
@@ -46,9 +45,9 @@ const monthSlug = {
   "07": "temmuz",
   "08": "agustos",
   "09": "eylul",
-  10: "ekim",
-  11: "kasim",
-  12: "aralik",
+  "10": "ekim",
+  "11": "kasim",
+  "12": "aralik",
 };
 
 export default function App() {
@@ -88,21 +87,25 @@ export default function App() {
     if (!selectedDay || !selectedMonth) return;
 
     const monthLabel = monthNames[selectedMonth];
+    const url = `https://bugununtarihi.com.tr/${selectedDay}-${monthSlug[selectedMonth]}`;
+
     document.title = `${selectedDay} ${monthLabel} Tarihte Ne Oldu?`;
 
-    document
-      .querySelector('meta[name="description"]')
-      ?.setAttribute(
+    const desc = document.querySelector('meta[name="description"]');
+    if (desc) {
+      desc.setAttribute(
         "content",
-        `${selectedDay} ${monthLabel} tarihinde yaşanan önemli olaylar.`,
+        `${selectedDay} ${monthLabel} tarihinde yaşanan önemli olaylar.`
       );
+    }
 
-    document
-      .querySelector('link[rel="canonical"]')
-      ?.setAttribute(
-        "href",
-        `https://bugununtarihi.com.tr/${selectedDay}-${monthSlug[selectedMonth]}`,
-      );
+    let canonical = document.querySelector("link[rel='canonical']");
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.rel = "canonical";
+      document.head.appendChild(canonical);
+    }
+    canonical.href = url;
   }, [selectedDay, selectedMonth]);
 
   /* ---------------- KLAVYE ---------------- */
@@ -115,11 +118,13 @@ export default function App() {
       const current = new Date(
         2024,
         parseInt(selectedMonth) - 1,
-        parseInt(selectedDay),
+        parseInt(selectedDay)
       );
 
       current.setDate(
-        e.key === "ArrowRight" ? current.getDate() + 1 : current.getDate() - 1,
+        e.key === "ArrowRight"
+          ? current.getDate() + 1
+          : current.getDate() - 1
       );
 
       const d = String(current.getDate()).padStart(2, "0");
@@ -136,7 +141,7 @@ export default function App() {
   useEffect(() => {
     const fetchSheet = async () => {
       const res = await fetch(
-        `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`,
+        `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
       );
       const text = await res.text();
       const json = JSON.parse(text.substring(47).slice(0, -2));
@@ -171,15 +176,22 @@ export default function App() {
   /* ---------------- FİLTRE ---------------- */
   const filteredEvents = useMemo(() => {
     if (!selectedDay || !selectedMonth) return [];
-    return allEvents.filter((e) => e.date === `${selectedDay}${selectedMonth}`);
+    return allEvents.filter(
+      (e) => e.date === `${selectedDay}${selectedMonth}`
+    );
   }, [allEvents, selectedDay, selectedMonth]);
 
-  const stoicNote = filteredEvents.find((e) => e.stoic)?.stoic || null;
+  const stoicNote = useMemo(
+    () => filteredEvents.find((e) => e.stoic)?.stoic || null,
+    [filteredEvents]
+  );
 
   /* ---------------- TYPEWRITER ---------------- */
   useEffect(() => {
     setVisibleEvents([]);
     setVisibleStoic(null);
+
+    if (filteredEvents.length === 0) return;
 
     let i = 0;
     const interval = setInterval(() => {
@@ -188,7 +200,12 @@ export default function App() {
         if (stoicNote) setVisibleStoic(stoicNote);
         return;
       }
-      setVisibleEvents((p) => [...p, filteredEvents[i++]]);
+
+      setVisibleEvents((prev) => {
+        const next = filteredEvents[i++];
+        if (!next) return prev;
+        return [...prev, next];
+      });
     }, 220);
 
     return () => clearInterval(interval);
@@ -196,9 +213,13 @@ export default function App() {
 
   if (!selectedDay || !selectedMonth) return null;
 
-  /* ---------------- UI ---------------- */
-  const daysInMonth = new Date(2024, selectedMonth, 0).getDate();
+  const daysInMonth = new Date(
+    2024,
+    parseInt(selectedMonth),
+    0
+  ).getDate();
 
+  /* ---------------- UI ---------------- */
   return (
     <div className="screen">
       <div className="terminal">
@@ -206,7 +227,6 @@ export default function App() {
           {selectedDay} {monthNames[selectedMonth]} Tarihte Ne Oldu?
         </h1>
 
-        {/* TARİH SEÇİCİ */}
         <div className="picker">
           <select
             value={selectedMonth}
@@ -241,11 +261,14 @@ export default function App() {
         {visibleStoic && <p className="stoic">{visibleStoic}</p>}
 
         <ul className="events">
-          {visibleEvents.map((e, i) => (
-            <li key={i}>
-              <span className="year">{e.year}</span> — <span>{e.text}</span>
-            </li>
-          ))}
+          {visibleEvents.map((e, i) =>
+            e ? (
+              <li key={i}>
+                <span className="year">{e.year}</span> —{" "}
+                <span>{e.text}</span>
+              </li>
+            ) : null
+          )}
         </ul>
       </div>
     </div>

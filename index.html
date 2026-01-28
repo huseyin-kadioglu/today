@@ -1,59 +1,52 @@
 <!DOCTYPE html>
 <html lang="tr">
   <head>
-    <!-- =====================
-         BASICS
-    ====================== -->
+    <!-- BASICS -->
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- =====================
-         PRIMARY SEO
-    ====================== -->
-    <title>Bugün Tarihte Ne Oldu?</title>
+    <!-- TITLE -->
+    <title>Bugün Tarihte Ne Oldu? | Tarihte Bugün Yaşananlar</title>
 
+    <!-- DESCRIPTION -->
     <meta
       name="description"
-      content="Bugün tarihte ne oldu? Her gün için kısa, sade ve güvenilir tarihsel olaylar. Minimal bir günlük tarih arşivi."
+      content="Bugün tarihte ne oldu? Bugünün tarihinde yaşanan önemli olaylar, doğumlar ve gelişmeler. Sade, hızlı ve güvenilir günlük tarih arşivi."
     />
 
-    <!-- prerender sırasında güncellenecek -->
-    <link rel="canonical" href="__CANONICAL__" />
+    <!-- CANONICAL (KRİTİK) -->
+    <link rel="canonical" href="https://bugununtarihi.com.tr/" />
 
-    <!-- =====================
-         FAVICON / LOGO
-    ====================== -->
+    <!-- ROBOTS -->
+    <meta name="robots" content="index, follow" />
+
+    <!-- THEME -->
+    <meta name="theme-color" content="#f4f1ea" />
+
+    <!-- ICONS -->
     <link rel="icon" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
 
-    <!-- =====================
-         FONTS
-    ====================== -->
+    <!-- FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital@1&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Libre+Baskerville:ital@1&display=swap"
       rel="stylesheet"
     />
 
-    <!-- =====================
-         OPEN GRAPH
-    ====================== -->
+    <!-- OPEN GRAPH -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Bugün Tarihte" />
     <meta property="og:title" content="Bugün Tarihte Ne Oldu?" />
     <meta
       property="og:description"
-      content="Her güne özel tarihsel olaylar. Sade, hızlı ve güvenilir bir tarih arşivi."
+      content="Bugünün tarihinde yaşanan önemli olayları keşfet."
     />
     <meta property="og:url" content="https://bugununtarihi.com.tr/" />
     <meta property="og:image" content="https://bugununtarihi.com.tr/logo-512.png" />
 
-    <!-- =====================
-         TWITTER
-    ====================== -->
+    <!-- TWITTER -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Bugün Tarihte Ne Oldu?" />
     <meta
@@ -62,38 +55,18 @@
     />
     <meta name="twitter:image" content="https://bugununtarihi.com.tr/logo-512.png" />
 
-    <!-- =====================
-         ROBOTS
-    ====================== -->
-    <meta name="robots" content="index, follow" />
-
-    <!-- =====================
-         THEME
-    ====================== -->
-    <meta name="theme-color" content="#f4f1ea" />
-
-    <!-- =====================
-         STRUCTURED DATA (LOGO)
-    ====================== -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "Bugün Tarihte",
-        "url": "https://bugununtarihi.com.tr",
-        "logo": "https://bugununtarihi.com.tr/logo-512.png"
-      }
-    </script>
-
-    <!-- =====================
-         STRUCTURED DATA (WEBSITE)
-    ====================== -->
+    <!-- STRUCTURED DATA -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
         "name": "Bugün Tarihte",
-        "url": "https://bugununtarihi.com.tr"
+        "url": "https://bugununtarihi.com.tr",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://bugununtarihi.com.tr/?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
       }
     </script>
   </head>
