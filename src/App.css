@@ -1,271 +1,117 @@
-/* ======================
-   GLOBAL
-====================== */
+:root{
+  --bg:#e8e3d8;
+  --surface:#f4f1ea;
+  --text:#1f1b16;
+  --muted:#6f675d;
+  --accent:#f4a261;
+  --border:#c8c1b8;
+}
 
-body {
-  margin: 0;
-  background: #e8e3d8;
-  color: #1f1b16;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+body{
+  margin:0;
+  background:var(--bg);
+  font-family:"IBM Plex Mono", monospace;
+  color:var(--text);
+}
+
+.screen{
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  padding:32px 14px;
+}
+
+.terminal{
+  max-width:760px;
+  width:100%;
+  background:var(--surface);
+  border-radius:14px;
+  padding:40px 28px;
+  border:1px solid var(--border);
+}
+
+/* BAŞLIK PICKER */
+.title-picker{
+  text-align:center;
+  position:relative;
+}
+
+.title-picker button {
   font-family: "IBM Plex Mono", monospace;
-}
-
-/* ======================
-   SCREEN
-====================== */
-
-.screen {
-  min-height: 100svh;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 24px 12px;
-}
-
-/* ======================
-   TERMINAL / ARCHIVE
-====================== */
-
-.terminal {
-  max-width: 760px;
-  width: 100%;
-  padding: 26px 24px 32px;
-  background: #f4f1ea;
-  color: #1f1b16;
-  border: 1px solid #c8c1b8;
-  position: relative;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.14);
-}
-
-.terminal::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(0, 0, 0, 0.025) 1px, transparent 1px);
-  background-size: 3px 3px;
-  pointer-events: none;
-}
-
-/* ======================
-   HEADER
-====================== */
-
-.header {
-  margin-bottom: 26px;
-}
-
-.archive-label {
-  font-size: 11px;
-  letter-spacing: 2px;
-  color: #6f675d;
-  margin-bottom: 6px;
-}
-
-.archive-title {
-  font-size: 1.1rem;
+  font-size: 4.2rem;
   font-weight: 500;
   letter-spacing: 0.02em;
-  margin: 0;
-}
-
-/* ======================
-   DATE PICKER
-====================== */
-
-.picker {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin: 18px 0 26px;
-}
-
-.picker::before {
-  content: "Tarihi Seçin >";
-  font-size: 11px;
-  color: #6f675d;
-  letter-spacing: 1px;
-}
-
-.picker select {
-  appearance: none;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid #c8c1b8;
-  padding: 6px 18px 6px 2px;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 12px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
   color: #1f1b16;
+  background: none;
+  border: none;
   cursor: pointer;
-}
-
-.picker select {
-  background-image:
-    linear-gradient(45deg, transparent 50%, #6f675d 50%),
-    linear-gradient(135deg, #6f675d 50%, transparent 50%);
-  background-position:
-    calc(100% - 10px) 55%,
-    calc(100% - 5px) 55%;
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
-}
-
-.picker select:hover {
-  border-bottom-color: #8b5e34;
-}
-
-.picker select:focus {
-  outline: none;
-  border-bottom-color: #1f1b16;
-}
-
-.picker::after {
-  content: "← → okları ile gün değiştir";
-  font-size: 12px;
-  color: #6f675d;
-  opacity: 0.5;
-  margin-left: 8px;
-}
-
-/* ======================
-   STOIC NOTE
-====================== */
-
-.stoic {
-  font-family: "Libre Baskerville", serif;
-  font-style: italic;
-  font-size: 0.9rem;
-  color: rgba(31, 27, 22, 0.55);
-  line-height: 1.7;
-  margin: 14px 0 28px;
-  padding-left: 14px;
-  border-left: 2px solid rgba(139, 94, 52, 0.35);
-}
-
-/* ======================
-   SECTION TITLE
-====================== */
-
-.section {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #6f675d;
-  margin-bottom: 18px;
-}
-
-/* ======================
-   EVENTS (DÜZELTİLDİ)
-====================== */
-
-.events {
-  list-style: none;
   padding: 0;
-  margin: 0;
+  border-bottom: 1px solid transparent;
+  transition: all .25s ease;
 }
 
-.events li {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 10px 0;
-  border-bottom: 1px dotted #c8c1b8;
-  line-height: 1.6;
-  animation: archiveFade 0.35s ease-out both;
-}
-
-.year {
-  min-width: 52px;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  color: #8b5e34;
-  opacity: 0.85;
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.events li span:not(.year) {
-  flex: 1;
-  font-size: 14px;
+.title-picker button:hover {
+  border-bottom-color: #8b5e34;
   color: #3a322b;
 }
 
-.events li:last-child {
-  border-bottom: none;
+
+.picker-panel{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  margin-top:12px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px;
+  display:flex;
+  gap:8px;
 }
 
-/* ======================
-   EMPTY STATE
-====================== */
-
-.empty {
-  font-size: 13px;
-  color: #6f675d;
-  font-style: italic;
+.picker-panel select{
+  background:#fdf6f0;
+  border:1px solid var(--border);
+  padding:6px 10px;
+  border-radius:6px;
+  font-family:inherit;
 }
 
-/* ======================
-   FOOTER
-====================== */
-
-.footer {
-  margin-top: 30px;
-  font-size: 11px;
-  color: #6f675d;
-  text-align: right;
-  letter-spacing: 0.08em;
-  opacity: 0.45;
+/* ALT BAŞLIK */
+.subtitle{
+  text-align:center;
+  margin-top:10px;
+  letter-spacing:0.2em;
+  color:var(--muted);
+  font-size:.9rem;
 }
 
-/* ======================
-   ANIMATIONS
-====================== */
-
-@keyframes archiveFade {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* STOIC */
+.stoic{
+  margin:30px auto 40px;
+  max-width:620px;
+  text-align:center;
+  font-style:italic;
+  color:var(--muted);
 }
+.stoic::before{content:"“";}
+.stoic::after{content:"”";}
 
-/* ======================
-   MOBILE
-====================== */
-
-@media (max-width: 600px) {
-  .terminal {
-    padding: 22px 18px;
-  }
-
-  .section {
-    font-size: 12px;
-  }
-
-  .stoic {
-    font-size: 0.82rem;
-  }
-
-  .picker {
-    gap: 10px;
-  }
-
-  .picker select {
-    font-size: 11px;
-  }
-
-  .year {
-    min-width: 44px;
-    font-size: 11px;
-  }
-
-  .events li span:not(.year) {
-    font-size: 13px;
-  }
+/* EVENTS */
+.events{
+  list-style:none;
+  padding:0;
+  margin:0;
+}
+.events li{
+  display:grid;
+  grid-template-columns:60px 1fr;
+  gap:18px;
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.year{
+  text-align:right;
+  font-size:12px;
+  color: #8b5e34;
 }

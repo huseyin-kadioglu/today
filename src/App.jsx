@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./App.css";
 
@@ -6,270 +6,135 @@ const SHEET_ID = "1yHFAy4yCOkEfDpJS0l8HV1jwI8cwJz3A4On6yJvblgQ";
 const SHEET_NAME = "Sheet1";
 
 const monthMap = {
-  ocak: "01",
-  subat: "02",
-  mart: "03",
-  nisan: "04",
-  mayis: "05",
-  haziran: "06",
-  temmuz: "07",
-  agustos: "08",
-  eylul: "09",
-  ekim: "10",
-  kasim: "11",
-  aralik: "12",
+  ocak: "01", subat: "02", mart: "03", nisan: "04",
+  mayis: "05", haziran: "06", temmuz: "07", agustos: "08",
+  eylul: "09", ekim: "10", kasim: "11", aralik: "12",
 };
 
 const monthNames = {
-  "01": "Ocak",
-  "02": "Şubat",
-  "03": "Mart",
-  "04": "Nisan",
-  "05": "Mayıs",
-  "06": "Haziran",
-  "07": "Temmuz",
-  "08": "Ağustos",
-  "09": "Eylül",
-  "10": "Ekim",
-  "11": "Kasım",
-  "12": "Aralık",
+  "01": "Ocak", "02": "Şubat", "03": "Mart", "04": "Nisan",
+  "05": "Mayıs", "06": "Haziran", "07": "Temmuz", "08": "Ağustos",
+  "09": "Eylül", "10": "Ekim", "11": "Kasım", "12": "Aralık",
 };
 
 const monthSlug = {
-  "01": "ocak",
-  "02": "subat",
-  "03": "mart",
-  "04": "nisan",
-  "05": "mayis",
-  "06": "haziran",
-  "07": "temmuz",
-  "08": "agustos",
-  "09": "eylul",
-  "10": "ekim",
-  "11": "kasim",
-  "12": "aralik",
+  "01": "ocak", "02": "subat", "03": "mart", "04": "nisan",
+  "05": "mayis", "06": "haziran", "07": "temmuz", "08": "agustos",
+  "09": "eylul", "10": "ekim", "11": "kasim", "12": "aralik",
 };
 
 export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
+  const pickerRef = useRef(null);
 
   const [allEvents, setAllEvents] = useState([]);
-  const [selectedDay, setSelectedDay] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [day, setDay] = useState(null);
+  const [month, setMonth] = useState(null);
+  const [open, setOpen] = useState(false);
 
-  const [visibleEvents, setVisibleEvents] = useState([]);
-  const [visibleStoic, setVisibleStoic] = useState(null);
-
-  /* ---------------- URL → TARİH ---------------- */
+  /* URL → TARİH */
   useEffect(() => {
     const path = location.pathname.replace("/", "");
-
     if (!path) {
       const now = new Date();
-      const d = String(now.getDate()).padStart(2, "0");
-      const m = String(now.getMonth() + 1).padStart(2, "0");
-      navigate(`/${d}-${monthSlug[m]}`, { replace: true });
+      navigate(`/${String(now.getDate()).padStart(2, "0")}-${monthSlug[String(now.getMonth() + 1).padStart(2, "0")]}`, { replace: true });
       return;
     }
-
-    const [day, monthName] = path.split("-");
-    const month = monthMap[monthName];
-
-    if (!day || !month) return;
-
-    setSelectedDay(day.padStart(2, "0"));
-    setSelectedMonth(month);
+    const [d, m] = path.split("-");
+    if (d && monthMap[m]) {
+      setDay(d);
+      setMonth(monthMap[m]);
+    }
   }, [location.pathname, navigate]);
 
-  /* ---------------- SEO ---------------- */
+  /* DATA */
   useEffect(() => {
-    if (!selectedDay || !selectedMonth) return;
-
-    const monthLabel = monthNames[selectedMonth];
-    const url = `https://bugununtarihi.com.tr/${selectedDay}-${monthSlug[selectedMonth]}`;
-
-    document.title = `${selectedDay} ${monthLabel} Tarihte Ne Oldu?`;
-
-    const desc = document.querySelector('meta[name="description"]');
-    if (desc) {
-      desc.setAttribute(
-        "content",
-        `${selectedDay} ${monthLabel} tarihinde yaşanan önemli olaylar.`
-      );
-    }
-
-    let canonical = document.querySelector("link[rel='canonical']");
-    if (!canonical) {
-      canonical = document.createElement("link");
-      canonical.rel = "canonical";
-      document.head.appendChild(canonical);
-    }
-    canonical.href = url;
-  }, [selectedDay, selectedMonth]);
-
-  /* ---------------- KLAVYE ---------------- */
-  useEffect(() => {
-    if (!selectedDay || !selectedMonth) return;
-
-    const handleKey = (e) => {
-      if (!["ArrowRight", "ArrowLeft"].includes(e.key)) return;
-
-      const current = new Date(
-        2024,
-        parseInt(selectedMonth) - 1,
-        parseInt(selectedDay)
-      );
-
-      current.setDate(
-        e.key === "ArrowRight"
-          ? current.getDate() + 1
-          : current.getDate() - 1
-      );
-
-      const d = String(current.getDate()).padStart(2, "0");
-      const m = String(current.getMonth() + 1).padStart(2, "0");
-
-      navigate(`/${d}-${monthSlug[m]}`);
-    };
-
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [selectedDay, selectedMonth, navigate]);
-
-  /* ---------------- DATA ---------------- */
-  useEffect(() => {
-    const fetchSheet = async () => {
-      const res = await fetch(
-        `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`
-      );
-      const text = await res.text();
-      const json = JSON.parse(text.substring(47).slice(0, -2));
-
-      let currentDate = null;
-      const parsed = [];
-
-      json.table.rows.forEach((r) => {
-        const dateCell = r.c[0]?.v;
-        const year = r.c[1]?.v;
-        const event = r.c[2]?.v;
-        const stoic = r.c[3]?.v;
-
-        if (dateCell) currentDate = String(dateCell).padStart(4, "0");
-
-        if (currentDate && year && event) {
-          parsed.push({
-            date: currentDate,
-            year,
-            text: event,
-            stoic: stoic || null,
-          });
-        }
+    fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`)
+      .then(r => r.text())
+      .then(t => {
+        const json = JSON.parse(t.substring(47).slice(0, -2));
+        let current = null;
+        const parsed = [];
+        json.table.rows.forEach(r => {
+          const d = r.c[0]?.v;
+          if (d) current = String(d).padStart(4, "0");
+          if (current && r.c[1]?.v && r.c[2]?.v) {
+            parsed.push({
+              date: current,
+              year: r.c[1].v,
+              text: r.c[2].v,
+              stoic: r.c[3]?.v || null,
+            });
+          }
+        });
+        setAllEvents(parsed);
       });
-
-      setAllEvents(parsed);
-    };
-
-    fetchSheet();
   }, []);
 
-  /* ---------------- FİLTRE ---------------- */
-  const filteredEvents = useMemo(() => {
-    if (!selectedDay || !selectedMonth) return [];
-    return allEvents.filter(
-      (e) => e.date === `${selectedDay}${selectedMonth}`
-    );
-  }, [allEvents, selectedDay, selectedMonth]);
-
-  const stoicNote = useMemo(
-    () => filteredEvents.find((e) => e.stoic)?.stoic || null,
-    [filteredEvents]
+  const events = useMemo(
+    () => allEvents.filter(e => e.date === `${day}${month}`),
+    [allEvents, day, month]
   );
 
-  /* ---------------- TYPEWRITER ---------------- */
+  const stoic = events.find(e => e.stoic)?.stoic;
+
+  /* dışarı tıklanınca kapat */
   useEffect(() => {
-    setVisibleEvents([]);
-    setVisibleStoic(null);
+    const close = e => pickerRef.current && !pickerRef.current.contains(e.target) && setOpen(false);
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
 
-    if (filteredEvents.length === 0) return;
+  if (!day || !month) return null;
 
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i >= filteredEvents.length) {
-        clearInterval(interval);
-        if (stoicNote) setVisibleStoic(stoicNote);
-        return;
-      }
-
-      setVisibleEvents((prev) => {
-        const next = filteredEvents[i++];
-        if (!next) return prev;
-        return [...prev, next];
-      });
-    }, 220);
-
-    return () => clearInterval(interval);
-  }, [filteredEvents, stoicNote]);
-
-  if (!selectedDay || !selectedMonth) return null;
-
-  const daysInMonth = new Date(
-    2024,
-    parseInt(selectedMonth),
-    0
-  ).getDate();
-
-  /* ---------------- UI ---------------- */
   return (
     <div className="screen">
       <div className="terminal">
-        <h1>
-          {selectedDay} {monthNames[selectedMonth]} Tarihte Ne Oldu?
-        </h1>
 
-        <div className="picker">
-          <select
-            value={selectedMonth}
-            onChange={(e) =>
-              navigate(`/${selectedDay}-${monthSlug[e.target.value]}`)
-            }
-          >
-            {Object.entries(monthNames).map(([v, n]) => (
-              <option key={v} value={v}>
-                {n}
-              </option>
-            ))}
-          </select>
+        {/* BAŞLIK PICKER */}
+        <div className="title-picker" ref={pickerRef}>
+          <button onClick={() => setOpen(!open)}>
+            {day} {monthNames[month]}
+          </button>
 
-          <select
-            value={selectedDay}
-            onChange={(e) =>
-              navigate(`/${e.target.value}-${monthSlug[selectedMonth]}`)
-            }
-          >
-            {Array.from({ length: daysInMonth }, (_, i) => {
-              const d = String(i + 1).padStart(2, "0");
-              return (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              );
-            })}
-          </select>
+          {open && (
+            <div className="picker-panel">
+              <select
+                value={month}
+                onChange={e => navigate(`/${day}-${monthSlug[e.target.value]}`)}
+              >
+                {Object.entries(monthNames).map(([v, n]) => (
+                  <option key={v} value={v}>{n}</option>
+                ))}
+              </select>
+
+              <select
+                value={day}
+                onChange={e => navigate(`/${e.target.value}-${monthSlug[month]}`)}
+              >
+                {Array.from({ length: 31 }, (_, i) => {
+                  const d = String(i + 1).padStart(2, "0");
+                  return <option key={d} value={d}>{d}</option>;
+                })}
+              </select>
+            </div>
+          )}
         </div>
 
-        {visibleStoic && <p className="stoic">{visibleStoic}</p>}
+        <div className="subtitle">Tarihte Ne Oldu?</div>
+
+        {stoic && <p className="stoic">{stoic}</p>}
 
         <ul className="events">
-          {visibleEvents.map((e, i) =>
-            e ? (
-              <li key={i}>
-                <span className="year">{e.year}</span> —{" "}
-                <span>{e.text}</span>
-              </li>
-            ) : null
-          )}
+          {events.map((e, i) => (
+            <li key={i}>
+              <span className="year">{e.year}</span>
+              <span>{e.text}</span>
+            </li>
+          ))}
         </ul>
+
       </div>
     </div>
   );
