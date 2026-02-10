@@ -156,13 +156,20 @@ body {
 }
 
 .events li {
+  position: relative;
   display: grid;
   grid-template-columns: 64px 1fr;
   gap: 10px;
   padding: 14px 0;
   border-bottom: 1px dotted var(--border);
   animation: fadeUp 0.4s ease-out both;
+  z-index: 1;
 }
+
+.events li.menu-open {
+  z-index: 10;
+}
+
 
 .year {
   text-align: right;
@@ -176,6 +183,102 @@ body {
   font-size: 12px;
   line-height: 1.2;
   color: #3a322b;
+}
+
+.share {
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.events li:hover .share {
+  opacity: 1;
+}
+
+.share button {
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.share button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.event-actions {
+  position: absolute;
+  top: 14px;       /* satırın üst hizası */
+  right: 0;
+  z-index: 2;
+}
+
+.dots {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background 0.15s ease, color 0.15s ease,
+    transform 0.05s ease;
+}
+
+.dots:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text);
+}
+
+.dots:active {
+  transform: translateY(1px);
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.dots.active {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--accent);
+}
+
+
+.action-menu {
+  position: absolute;
+  right: 0;
+  top: 20px;
+  background: #f7f3ec;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 20;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.action-menu button {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: #3a322b;
+  text-align: left;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.action-menu button:hover {
+  background: rgba(0, 0, 0, 0.04);
 }
 
 /* ANIMATION */

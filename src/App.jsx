@@ -59,6 +59,7 @@ export default function App() {
   const [day, setDay] = useState(null);
   const [month, setMonth] = useState(null);
   const [open, setOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState(null);
 
   /* SEO – TARAYICI BAŞLIĞI */
   useEffect(() => {
@@ -117,6 +118,142 @@ export default function App() {
   );
 
   const stoic = events.find((e) => e.stoic)?.stoic;
+
+  useEffect(() => {
+    const close = () => setOpenMenu(null);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, []);
+
+  /* =========================
+   TEXT HELPERS
+========================= */
+
+  const getWrappedLines = (ctx, text, maxWidth) => {
+    const words = text.split(" ");
+    const lines = [];
+    let line = "";
+
+    words.forEach((w) => {
+      const test = line + w + " ";
+      if (ctx.measureText(test).width > maxWidth && line !== "") {
+        lines.push(line);
+        line = w + " ";
+      } else {
+        line = test;
+      }
+    });
+
+    lines.push(line);
+    return lines;
+  };
+
+  /* =========================
+   COPY TEXT
+========================= */
+
+  const copyText = (e) => {
+    const text = `${day} ${monthNames[month]} ${e.year}
+${e.text}
+
+bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
+
+    navigator.clipboard.writeText(text);
+  };
+
+  /* =========================
+   COPY IMAGE
+========================= */
+
+  const copyImage = async (e) => {
+    const width = 960;
+    const height = 420;
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = width;
+    canvas.height = height;
+
+    /* Arka plan */
+    ctx.fillStyle = "#1f1b16";
+    ctx.fillRect(0, 0, width, height);
+
+    /* Kart */
+    ctx.fillStyle = "#2a2520";
+    roundRect(ctx, 24, 24, width - 48, height - 48, 18);
+    ctx.fill();
+
+    /* Sol accent */
+    ctx.fillStyle = "#8b5e34";
+    ctx.fillRect(24, 24, 6, height - 48);
+
+    /* Window dots */
+    ctx.fillStyle = "#ff5f56";
+    ctx.beginPath();
+    ctx.arc(56, 48, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffbd2e";
+    ctx.beginPath();
+    ctx.arc(72, 48, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#27c93f";
+    ctx.beginPath();
+    ctx.arc(88, 48, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* Başlık */
+    ctx.fillStyle = "#e8e3d8";
+    ctx.font = "500 16px 'IBM Plex Mono', monospace";
+    ctx.textAlign = "left";
+    ctx.fillText(`// ${day} ${monthNames[month]} · ${e.year}`, 64, 86);
+
+    /* Kod bloğu metni – ORTALI */
+    ctx.fillStyle = "#f4f1ea";
+    ctx.font = "18px 'IBM Plex Mono', monospace";
+    ctx.textAlign = "center";
+
+    const maxWidth = width - 160;
+    const lineHeight = 28;
+
+    const lines = getWrappedLines(ctx, e.text, maxWidth);
+    const textHeight = lines.length * lineHeight;
+
+    const startY = 24 + (height - 48) / 2 - textHeight / 2 + lineHeight / 2;
+
+    lines.forEach((line, i) => {
+      ctx.fillText(line, width / 2, startY + i * lineHeight);
+    });
+
+    /* Footer */
+    ctx.fillStyle = "#6f675d";
+    ctx.font = "12px 'IBM Plex Mono', monospace";
+    ctx.textAlign = "left";
+    ctx.fillText("bugununtarihi.com.tr", 64, height - 56);
+
+    const blob = await new Promise((r) => canvas.toBlob(r, "image/png"));
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+  };
+
+  /* =========================
+   ROUND RECT
+========================= */
+
+  const roundRect = (ctx, x, y, w, h, r) => {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  };
 
   /* dışarı tıklanınca kapat */
   useEffect(() => {
@@ -255,9 +392,39 @@ export default function App() {
 
         <ul className="events">
           {events.map((e, i) => (
-            <li key={i} style={{ animationDelay: `${i * 40}ms` }}>
+            <li
+              key={i}
+              className={openMenu === i ? "menu-open" : ""}
+              style={{ animationDelay: `${i * 40}ms` }}
+            >
               <span className="year">{e.year}</span>
               <span className="event-text">{e.text}</span>
+
+              <div className="event-actions">
+                <button
+                  className={`dots ${openMenu === i ? "active" : ""}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenMenu(openMenu === i ? null : i);
+                  }}
+                >
+                  …
+                </button>
+
+                {openMenu === i && (
+                  <div className="action-menu">
+                    <button onClick={() => copyText(e)}>Metni kopyala</button>
+                    <button
+                      onClick={() => {
+                        copyImage(e);
+                        setOpenMenu(null);
+                      }}
+                    >
+                      Görseli kopyala
+                    </button>
+                  </div>
+                )}
+              </div>
             </li>
           ))}
         </ul>
