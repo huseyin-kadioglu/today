@@ -87,16 +87,20 @@ function fetchMonth_(sheet, month) {
 
       const wt = json.parse.wikitext;
 
-      parseSection_(wt, "Doğumlar").forEach(({ year, text }) =>
-        rows.push([dateNum, year, text, "", "birth"])
-      );
-      parseSection_(wt, "Ölümler").forEach(({ year, text }) =>
-        rows.push([dateNum, year, text, "", "death"])
+      const births = parseSection_(wt, "Doğumlar");
+      const deaths = parseSection_(wt, "Ölümler");
+      const allEntries = [
+        ...births.map(e => ({ ...e, type: "birth" })),
+        ...deaths.map(e => ({ ...e, type: "death" })),
+      ];
+
+      // Date code only on first row of each date group (App.jsx parsing expects this)
+      allEntries.forEach(({ year, text, type }, i) =>
+        rows.push([i === 0 ? dateNum : "", year, text, "", type])
       );
 
       Logger.log(d + " " + month.name + " → " +
-        parseSection_(wt, "Doğumlar").length + " doğum, " +
-        parseSection_(wt, "Ölümler").length + " ölüm");
+        births.length + " doğum, " + deaths.length + " ölüm");
 
     } catch (e) {
       Logger.log("HATA: " + d + " " + month.name + " → " + e);

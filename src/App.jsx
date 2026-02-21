@@ -70,6 +70,9 @@ function getAdjacentDate(day, month, offset) {
   };
 }
 
+// Route değişimlerinde yeniden fetch yapılmasın
+let _eventsCache = null;
+
 export default function App() {
   return (
     <Routes>
@@ -118,6 +121,10 @@ function MainApp() {
 
   /* DATA */
   useEffect(() => {
+    if (_eventsCache) {
+      setAllEvents(_eventsCache);
+      return;
+    }
     fetch(
       `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`,
     )
@@ -138,6 +145,7 @@ function MainApp() {
             });
           }
         });
+        _eventsCache = parsed;
         setAllEvents(parsed);
       });
   }, []);
@@ -196,72 +204,93 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
 ========================= */
 
   const copyImage = async (e) => {
-    const width = 960;
-    const height = 420;
+    const size = 1080;
+    const cx   = size / 2;
+    const hp   = 108; // horizontal padding
 
     const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
+    const ctx    = canvas.getContext("2d");
+    canvas.width  = size;
+    canvas.height = size;
 
-    canvas.width = width;
-    canvas.height = height;
-
-    /* Arka plan */
-    ctx.fillStyle = "#1f1b16";
-    ctx.fillRect(0, 0, width, height);
-
-    /* Kart */
-    ctx.fillStyle = "#2a2520";
-    roundRect(ctx, 24, 24, width - 48, height - 48, 18);
-    ctx.fill();
-
-    /* Sol accent */
-    ctx.fillStyle = "#8b5e34";
-    ctx.fillRect(24, 24, 6, height - 48);
-
-    /* Window dots */
-    ctx.fillStyle = "#ff5f56";
-    ctx.beginPath();
-    ctx.arc(56, 48, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#ffbd2e";
-    ctx.beginPath();
-    ctx.arc(72, 48, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#27c93f";
-    ctx.beginPath();
-    ctx.arc(88, 48, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    /* Başlık */
+    /* Arka plan – uygulamanın --bg rengi */
     ctx.fillStyle = "#e8e3d8";
-    ctx.font = "500 16px 'IBM Plex Mono', monospace";
-    ctx.textAlign = "left";
-    ctx.fillText(`// ${day} ${monthNames[month]} · ${e.year}`, 64, 86);
+    ctx.fillRect(0, 0, size, size);
 
-    /* Kod bloğu metni – ORTALI */
+    /* Kart – uygulamanın --surface rengi */
     ctx.fillStyle = "#f4f1ea";
-    ctx.font = "18px 'IBM Plex Mono', monospace";
+    roundRect(ctx, 52, 52, size - 104, size - 104, 28);
+    ctx.fill();
+
+    /* Kart çerçevesi */
+    ctx.strokeStyle = "#c8c1b8";
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, 52, 52, size - 104, size - 104, 28);
+    ctx.stroke();
+
+    /* Yıl – en üst, büyük, accent rengi */
+    const yearDisplay = e.year < 0 ? `MÖ ${Math.abs(e.year)}` : String(e.year);
+    ctx.fillStyle = "#8b5e34";
+    ctx.font = "500 128px 'IBM Plex Mono', monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(yearDisplay, cx, 248);
+
+    /* Gün */
+    ctx.fillStyle = "#6f675d";
+    ctx.font = "400 30px 'IBM Plex Mono', monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(
+      `${day} ${monthNames[month]}`.toUpperCase(),
+      cx,
+      310,
+    );
+
+    /* Üst çizgi */
+    ctx.strokeStyle = "#c8c1b8";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(hp, 352);
+    ctx.lineTo(size - hp, 352);
+    ctx.stroke();
+
+    /* Olay metni – dinamik font boyutu */
+    const len = e.text.length;
+    const fs  = len < 70 ? 40 : len < 130 ? 34 : len < 220 ? 29 : 25;
+    ctx.fillStyle = "#1f1b16";
+    ctx.font = `400 ${fs}px 'IBM Plex Mono', monospace`;
     ctx.textAlign = "center";
 
-    const maxWidth = width - 160;
-    const lineHeight = 28;
+    const maxW  = size - hp * 2 - 16;
+    const lineH = Math.round(fs * 1.65);
+    const lines = getWrappedLines(ctx, e.text, maxW);
 
-    const lines = getWrappedLines(ctx, e.text, maxWidth);
-    const textHeight = lines.length * lineHeight;
+    const zoneTop = 372;
+    const zoneBot = 920;
+    const blockH  = lines.length * lineH;
+    const textY   = zoneTop + (zoneBot - zoneTop - blockH) / 2 + fs * 0.8;
 
-    const startY = 24 + (height - 48) / 2 - textHeight / 2 + lineHeight / 2;
+    lines.forEach((line, i) =>
+      ctx.fillText(line.trim(), cx, textY + i * lineH)
+    );
 
-    lines.forEach((line, i) => {
-      ctx.fillText(line, width / 2, startY + i * lineHeight);
-    });
+    /* Alt çizgi */
+    ctx.strokeStyle = "#c8c1b8";
+    ctx.beginPath();
+    ctx.moveTo(hp, 932);
+    ctx.lineTo(size - hp, 932);
+    ctx.stroke();
 
-    /* Footer */
-    ctx.fillStyle = "#6f675d";
-    ctx.font = "12px 'IBM Plex Mono', monospace";
+    /* Logo */
+    ctx.fillStyle = "#8b5e34";
+    ctx.font = "700 20px 'IBM Plex Mono', monospace";
     ctx.textAlign = "left";
-    ctx.fillText("bugununtarihi.com.tr", 64, height - 56);
+    ctx.fillText(">_", hp, 972);
+
+    /* Site URL */
+    ctx.fillStyle = "#6f675d";
+    ctx.font = "300 18px 'IBM Plex Mono', monospace";
+    ctx.textAlign = "right";
+    ctx.fillText("bugununtarihi.com.tr", size - hp, 972);
 
     const blob = await new Promise((r) => canvas.toBlob(r, "image/png"));
     await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);

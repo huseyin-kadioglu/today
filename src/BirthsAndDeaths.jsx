@@ -69,6 +69,8 @@ function getAdjacentDate(day, month, offset) {
   };
 }
 
+let _birthsDeathsCache = null;
+
 export default function BirthsAndDeaths() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -95,6 +97,10 @@ export default function BirthsAndDeaths() {
 
   /* DATA */
   useEffect(() => {
+    if (_birthsDeathsCache) {
+      setAllEvents(_birthsDeathsCache);
+      return;
+    }
     fetch(
       `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`,
     )
@@ -111,10 +117,11 @@ export default function BirthsAndDeaths() {
               date: current,
               year: r.c[1].v,
               text: r.c[2].v,
-              type: r.c[4]?.v || "event", // type: birth, death, event
+              type: r.c[4]?.v || "event",
             });
           }
         });
+        _birthsDeathsCache = parsed;
         setAllEvents(parsed);
       });
   }, []);
