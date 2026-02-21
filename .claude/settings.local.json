@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:tr.wikipedia.org)",
+      "Bash(curl:*)",
+      "Bash(python3:*)"
+    ]
+  }
+}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Routes, Route, Link } from "react-router-dom";
 import "./App.css";
+import BirthsAndDeaths from "./BirthsAndDeaths.jsx";
 
 const SHEET_ID = "1yHFAy4yCOkEfDpJS0l8HV1jwI8cwJz3A4On6yJvblgQ";
 const SHEET_NAME = "Sheet1";
@@ -50,7 +51,36 @@ const monthSlug = {
   12: "aralik",
 };
 
+const MONTH_DAYS = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+function getAdjacentDate(day, month, offset) {
+  let d = parseInt(day);
+  let m = parseInt(month) - 1;
+  d += offset;
+  if (d < 1) {
+    m = (m - 1 + 12) % 12;
+    d = MONTH_DAYS[m];
+  } else if (d > MONTH_DAYS[m]) {
+    m = (m + 1) % 12;
+    d = 1;
+  }
+  return {
+    day: String(d).padStart(2, "0"),
+    month: String(m + 1).padStart(2, "0"),
+  };
+}
+
 export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<MainApp />} />
+      <Route path="/:date/:pageType" element={<BirthsAndDeaths />} />
+      <Route path="/:date" element={<MainApp />} />
+    </Routes>
+  );
+}
+
+function MainApp() {
   const location = useLocation();
   const navigate = useNavigate();
   const pickerRef = useRef(null);
@@ -335,6 +365,9 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
 
   if (!day || !month) return null;
 
+  const prev = getAdjacentDate(day, month, -1);
+  const next = getAdjacentDate(day, month, 1);
+
   return (
     <div className="screen">
       <h1 className="visually-hidden">
@@ -348,9 +381,27 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
       <div className="terminal">
         {/* BAŞLIK PICKER */}
         <div className="title-picker" ref={pickerRef}>
+          <Link
+            to={`/${prev.day}-${monthSlug[prev.month]}`}
+            className="nav-arrow nav-prev"
+            title={`${prev.day} ${monthNames[prev.month]} Tarihte Ne Oldu?`}
+          >
+            <span className="nav-label">← {prev.day} {monthNames[prev.month]}</span>
+            <span className="nav-icon">‹</span>
+          </Link>
+
           <button onClick={() => setOpen(!open)}>
             {day} {monthNames[month]}
           </button>
+
+          <Link
+            to={`/${next.day}-${monthSlug[next.month]}`}
+            className="nav-arrow nav-next"
+            title={`${next.day} ${monthNames[next.month]} Tarihte Ne Oldu?`}
+          >
+            <span className="nav-label">{next.day} {monthNames[next.month]} →</span>
+            <span className="nav-icon">›</span>
+          </Link>
 
           {open && (
             <div className="picker-panel">
@@ -386,7 +437,13 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
           )}
         </div>
 
-        <div className="subtitle">TARİHTE NE OLDU?</div>
+        <div className="page-tabs">
+          <span className="tab tab-active">Tarihte Ne Oldu</span>
+          <span className="tab-dot">·</span>
+          <span className="tab" onClick={() => navigate(`/${day}-${monthSlug[month]}/dogumlar-ve-olumler`)}>
+            Doğumlar &amp; Ölümler
+          </span>
+        </div>
 
         {stoic && <p className="stoic">{stoic}</p>}
 
