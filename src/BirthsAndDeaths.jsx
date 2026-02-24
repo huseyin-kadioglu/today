@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import "./App.css";
+import TerminalActions from "./TerminalActions.jsx";
 
 const SHEET_ID = "1yHFAy4yCOkEfDpJS0l8HV1jwI8cwJz3A4On6yJvblgQ";
 const SHEET_NAME = "dogumlar-olumler"; // Google Sheets'te bu isimde yeni sekme oluştur
@@ -78,6 +79,13 @@ export default function BirthsAndDeaths() {
   const [allEvents, setAllEvents] = useState([]);
   const [day, setDay] = useState(null);
   const [month, setMonth] = useState(null);
+  const [lang, setLang] = useState(() => localStorage.getItem("lang") || "tr");
+
+  const toggleLang = () => {
+    const next = lang === "tr" ? "en" : "tr";
+    localStorage.setItem("lang", next);
+    setLang(next);
+  };
 
   /* URL → TARİH */
   useEffect(() => {
@@ -118,6 +126,8 @@ export default function BirthsAndDeaths() {
               year: r.c[1].v,
               text: r.c[2].v,
               type: r.c[4]?.v || "event",
+              // EN metni Sheets'te 6. kolon (index 5) olarak eklenmeli
+              text_en: r.c[5]?.v || null,
             });
           }
         });
@@ -217,6 +227,8 @@ export default function BirthsAndDeaths() {
       </p>
 
       <div className="terminal">
+        <TerminalActions lang={lang} onToggleLang={toggleLang} />
+
         {/* BAŞLIK */}
         <div className="title-picker">
           <Link
@@ -262,7 +274,9 @@ export default function BirthsAndDeaths() {
                 births.map((e, i) => (
                   <div key={i} className="event-item birth-item">
                     <span className="year">{e.year}</span>
-                    <span className="event-text">{e.text}</span>
+                    <span className="event-text">
+                      {lang === "en" && e.text_en ? e.text_en : e.text}
+                    </span>
                   </div>
                 ))
               ) : (
@@ -281,7 +295,9 @@ export default function BirthsAndDeaths() {
                 deaths.map((e, i) => (
                   <div key={i} className="event-item death-item">
                     <span className="year">{e.year}</span>
-                    <span className="event-text">{e.text}</span>
+                    <span className="event-text">
+                      {lang === "en" && e.text_en ? e.text_en : e.text}
+                    </span>
                   </div>
                 ))
               ) : (

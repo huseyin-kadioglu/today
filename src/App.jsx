@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation, useNavigate, Routes, Route, Link } from "react-router-dom";
 import "./App.css";
 import BirthsAndDeaths from "./BirthsAndDeaths.jsx";
+import TerminalActions from "./TerminalActions.jsx";
 
 const SHEET_ID = "1yHFAy4yCOkEfDpJS0l8HV1jwI8cwJz3A4On6yJvblgQ";
 const SHEET_NAME = "Sheet1";
@@ -93,6 +94,13 @@ function MainApp() {
   const [month, setMonth] = useState(null);
   const [open, setOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
+  const [lang, setLang] = useState(() => localStorage.getItem("lang") || "tr");
+
+  const toggleLang = () => {
+    const next = lang === "tr" ? "en" : "tr";
+    localStorage.setItem("lang", next);
+    setLang(next);
+  };
 
   /* SEO – TARAYICI BAŞLIĞI */
   useEffect(() => {
@@ -142,6 +150,8 @@ function MainApp() {
               year: r.c[1].v,
               text: r.c[2].v,
               stoic: r.c[3]?.v || null,
+              // EN metni Sheets'te 5. kolon (index 4) olarak eklenmeli
+              text_en: r.c[4]?.v || null,
             });
           }
         });
@@ -408,6 +418,8 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
       </p>
 
       <div className="terminal">
+        <TerminalActions lang={lang} onToggleLang={toggleLang} />
+
         {/* BAŞLIK PICKER */}
         <div className="title-picker" ref={pickerRef}>
           <Link
@@ -484,7 +496,9 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
               style={{ animationDelay: `${i * 40}ms` }}
             >
               <span className="year">{e.year}</span>
-              <span className="event-text">{e.text}</span>
+              <span className="event-text">
+                {lang === "en" && e.text_en ? e.text_en : e.text}
+              </span>
 
               <div className="event-actions">
                 <button

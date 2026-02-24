@@ -452,6 +452,127 @@ body {
   cursor: default;
 }
 
+/* FLOATING SETTINGS BUTTON */
+
+.floating-actions {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  z-index: 100;
+}
+
+.settings-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 17px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.settings-btn:hover {
+  color: var(--accent);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+}
+
+.settings-btn.settings-btn-active {
+  color: var(--accent);
+  background: #ede8df;
+}
+
+.settings-panel {
+  background: #f7f3ec;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+  min-width: 178px;
+}
+
+.settings-lang {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 10px 8px;
+}
+
+.lang-btn {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  transition: color 0.15s ease;
+}
+
+.lang-btn:hover {
+  color: var(--accent);
+}
+
+.lang-btn.lang-active {
+  color: var(--text);
+  font-weight: 700;
+  cursor: default;
+}
+
+.lang-sep {
+  font-size: 10px;
+  color: var(--border);
+  user-select: none;
+}
+
+.settings-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 2px 8px 6px;
+}
+
+.settings-panel a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: #3a322b;
+  text-decoration: none;
+  padding: 7px 10px;
+  border-radius: 6px;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.settings-panel a:hover {
+  background: rgba(139, 94, 52, 0.08);
+  color: var(--accent);
+}
+
+.settings-icon {
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
 /* ANIMATION */
 
 @keyframes fadeUp {
