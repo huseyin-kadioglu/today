@@ -585,3 +585,554 @@ body {
     transform: translateY(0);
   }
 }
+
+/* =====================
+   QUIZ
+===================== */
+
+.quiz-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 36px;
+}
+
+.quiz-back {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.quiz-back:hover {
+  color: var(--accent);
+}
+
+.quiz-logo {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+/* START */
+
+.quiz-start {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+
+.quiz-start-icon {
+  font-size: 2.8rem;
+  line-height: 1;
+}
+
+.quiz-title {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  margin: 0;
+}
+
+.quiz-subtitle {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.quiz-name-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.quiz-name-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: left;
+}
+
+.quiz-name-input {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 14px;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 4px;
+  outline: none;
+  width: 100%;
+  letter-spacing: 0.06em;
+  transition: border-color 0.2s ease;
+}
+
+.quiz-name-input::placeholder {
+  color: var(--border);
+}
+
+.quiz-name-input:focus {
+  border-bottom-color: var(--accent);
+}
+
+/* BUTTONS */
+
+.quiz-btn-primary {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.05s ease;
+}
+
+.quiz-btn-primary:hover {
+  opacity: 0.88;
+}
+
+.quiz-btn-primary:active {
+  transform: translateY(1px);
+}
+
+.quiz-btn-primary:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.quiz-btn-secondary {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 10px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.quiz-btn-secondary:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* LEADERBOARD */
+
+.quiz-leaderboard {
+  width: 100%;
+  max-width: 400px;
+  margin-top: 8px;
+}
+
+.quiz-board-title {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.quiz-board-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px dotted var(--border);
+  align-items: center;
+}
+
+.quiz-board-rank {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+}
+
+.quiz-board-name {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quiz-board-score {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.quiz-board-date {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  color: var(--border);
+  white-space: nowrap;
+}
+
+.quiz-board-empty {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: var(--border);
+  text-align: center;
+  font-style: italic;
+  margin: 0;
+}
+
+/* QUESTION */
+
+.quiz-question-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.quiz-counter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quiz-counter-text {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+}
+
+.quiz-progress-bar {
+  width: 100%;
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.quiz-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.quiz-q-text {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+  color: var(--text);
+  line-height: 1.55;
+  text-align: center;
+  padding: 0 4px;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: #3a322b;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 11px 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.quiz-option:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: rgba(139, 94, 52, 0.05);
+}
+
+.quiz-option:disabled {
+  cursor: default;
+}
+
+.quiz-option-letter {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  min-width: 14px;
+}
+
+.quiz-option-correct {
+  border-color: #4caf50 !important;
+  background: rgba(76, 175, 80, 0.08) !important;
+  color: #2e7d32 !important;
+}
+
+.quiz-option-correct .quiz-option-letter {
+  color: #4caf50;
+}
+
+.quiz-option-wrong {
+  border-color: #e57373 !important;
+  background: rgba(229, 115, 115, 0.08) !important;
+  color: #c62828 !important;
+}
+
+.quiz-option-wrong .quiz-option-letter {
+  color: #e57373;
+}
+
+.quiz-option-dim {
+  opacity: 0.4;
+}
+
+.quiz-feedback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-top: 4px;
+  animation: fadeUp 0.3s ease-out both;
+}
+
+.quiz-fact {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.6;
+  text-align: center;
+  margin: 0;
+  padding: 0 8px;
+}
+
+.quiz-fact::before { content: "💡 "; }
+
+/* RESULT */
+
+.quiz-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.quiz-badge-icon {
+  font-size: 3.2rem;
+  line-height: 1;
+  animation: fadeUp 0.4s ease-out both;
+}
+
+.quiz-badge-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.quiz-score-display {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: clamp(2.8rem, 8vw, 4.2rem);
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.quiz-score-of {
+  font-size: 0.45em;
+  color: var(--muted);
+}
+
+.quiz-score-caption {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+  font-style: italic;
+}
+
+.quiz-summary {
+  width: 100%;
+  max-width: 480px;
+  margin-top: 4px;
+  text-align: left;
+}
+
+.quiz-summary-row {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 8px 10px;
+  padding: 7px 0;
+  border-bottom: 1px dotted var(--border);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  align-items: start;
+}
+
+.quiz-summary-mark {
+  font-size: 12px;
+  font-weight: 700;
+  padding-top: 1px;
+}
+
+.quiz-summary-correct .quiz-summary-mark { color: #4caf50; }
+.quiz-summary-wrong .quiz-summary-mark   { color: #e57373; }
+
+.quiz-summary-q {
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.quiz-summary-ans {
+  grid-column: 2;
+  font-size: 10px;
+  color: #4caf50;
+  font-style: italic;
+}
+
+.quiz-result-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+/* LOADING */
+
+.quiz-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 80px 0;
+}
+
+.quiz-loading-dot {
+  font-size: 2rem;
+  color: var(--accent);
+  animation: dotPulse 1.2s ease-in-out infinite;
+}
+
+.quiz-loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.quiz-loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.2; }
+  50%       { opacity: 1; }
+}
+
+/* PLAYED TODAY */
+
+.quiz-played-today {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(139, 94, 52, 0.07);
+  border: 1px solid rgba(139, 94, 52, 0.2);
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.quiz-played-today span {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.quiz-played-today strong {
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* SHARE */
+
+.quiz-share-btn {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 8px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.quiz-share-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* COUNTDOWN */
+
+.quiz-countdown {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.quiz-countdown-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.quiz-countdown-time {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+/* TAB as link */
+
+a.tab {
+  text-decoration: none;
+}

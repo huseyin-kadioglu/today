@@ -3,6 +3,7 @@ import { useLocation, useNavigate, Routes, Route, Link } from "react-router-dom"
 import "./App.css";
 import BirthsAndDeaths from "./BirthsAndDeaths.jsx";
 import TerminalActions from "./TerminalActions.jsx";
+import Quiz from "./Quiz.jsx";
 
 const SHEET_ID = "1yHFAy4yCOkEfDpJS0l8HV1jwI8cwJz3A4On6yJvblgQ";
 const SHEET_NAME = "Sheet1";
@@ -78,6 +79,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<MainApp />} />
+      <Route path="/quiz" element={<Quiz />} />
       <Route path="/:date/:pageType" element={<BirthsAndDeaths />} />
       <Route path="/:date" element={<MainApp />} />
     </Routes>
@@ -484,6 +486,8 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
           <span className="tab" onClick={() => navigate(`/${day}-${monthSlug[month]}/dogumlar-ve-olumler`)}>
             Doğumlar &amp; Ölümler
           </span>
+          <span className="tab-dot">·</span>
+          <Link to="/quiz" className="tab">Günlük Quiz</Link>
         </div>
 
         {stoic && <p className="stoic">{stoic}</p>}

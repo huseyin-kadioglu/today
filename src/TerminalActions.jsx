@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 
 export default function TerminalActions({ lang, onToggleLang }) {
   const [showPanel, setShowPanel] = useState(false);
@@ -33,6 +34,13 @@ export default function TerminalActions({ lang, onToggleLang }) {
               EN
             </button>
           </div>
+
+          <div className="settings-divider" />
+
+          <Link to="/quiz">
+            <span className="settings-icon">📜</span>
+            Tarih Quizi
+          </Link>
 
           <div className="settings-divider" />
 
