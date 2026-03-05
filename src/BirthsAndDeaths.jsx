@@ -2,9 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import "./App.css";
 import TerminalActions from "./TerminalActions.jsx";
-
-const SHEET_ID = "1yHFAy4yCOkEfDpJS0l8HV1jwI8cwJz3A4On6yJvblgQ";
-const SHEET_NAME = "dogumlar-olumler"; // Google Sheets'te bu isimde yeni sekme oluştur
+import { getBirthsDeaths } from "./firestore.js";
 
 const monthMap = {
   ocak: "01",
@@ -70,13 +68,12 @@ function getAdjacentDate(day, month, offset) {
   };
 }
 
-let _birthsDeathsCache = null;
-
 export default function BirthsAndDeaths() {
   const location = useLocation();
   const navigate = useNavigate();
 
   const [allEvents, setAllEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [day, setDay] = useState(null);
   const [month, setMonth] = useState(null);
   const [lang, setLang] = useState(() => localStorage.getItem("lang") || "tr");
@@ -91,10 +88,9 @@ export default function BirthsAndDeaths() {
   useEffect(() => {
     const path = location.pathname.replace("/", "");
     if (!path) return;
-    
     const parts = path.split("/");
     if (parts.length >= 2) {
-      const [datePart, pageType] = parts;
+      const [datePart] = parts;
       const [d, m] = datePart.split("-");
       if (d && monthMap[m]) {
         setDay(d);
@@ -103,58 +99,32 @@ export default function BirthsAndDeaths() {
     }
   }, [location.pathname]);
 
-  /* DATA */
+  /* DATA – Firestore'dan sadece o günün verisi */
   useEffect(() => {
-    if (_birthsDeathsCache) {
-      setAllEvents(_birthsDeathsCache);
-      return;
-    }
-    fetch(
-      `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`,
-    )
-      .then((r) => r.text())
-      .then((t) => {
-        const json = JSON.parse(t.substring(47).slice(0, -2));
-        let current = null;
-        const parsed = [];
-        json.table.rows.forEach((r) => {
-          const d = r.c[0]?.v;
-          if (d) current = String(d).padStart(4, "0");
-          if (current && r.c[1]?.v && r.c[2]?.v) {
-            parsed.push({
-              date: current,
-              year: r.c[1].v,
-              text: r.c[2].v,
-              type: r.c[4]?.v || "event",
-              // EN metni Sheets'te 6. kolon (index 5) olarak eklenmeli
-              text_en: r.c[5]?.v || null,
-            });
-          }
-        });
-        _birthsDeathsCache = parsed;
-        setAllEvents(parsed);
-      });
-  }, []);
-
-  const events = useMemo(
-    () => allEvents.filter((e) => e.date === `${day}${month}`),
-    [allEvents, day, month],
-  );
+    if (!day || !month) return;
+    setLoading(true);
+    getBirthsDeaths(`${day}${month}`)
+      .then((data) => {
+        setAllEvents(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [day, month]);
 
   const births = useMemo(
-    () => events.filter((e) => e.type === "birth"),
-    [events]
+    () => allEvents.filter((e) => e.type === "birth"),
+    [allEvents]
   );
 
   const deaths = useMemo(
-    () => events.filter((e) => e.type === "death"),
-    [events]
+    () => allEvents.filter((e) => e.type === "death"),
+    [allEvents]
   );
 
   /* SEO – BAŞLIK */
   useEffect(() => {
     if (!day || !month) return;
-    document.title = `${day} ${monthNames[month]} Doğumlar ve Ölümler`;
+    document.title = `${day} ${monthNames[month]} Doğumlar ve Ölümler | Bugünün Tarihi`;
   }, [day, month]);
 
   /* CANONICAL */
@@ -173,8 +143,8 @@ export default function BirthsAndDeaths() {
   /* OG / TWITTER */
   useEffect(() => {
     if (!day || !month) return;
-    const title = `${day} ${monthNames[month]} Doğumlar ve Ölümler`;
-    const desc = `${day} ${monthNames[month]} tarihinde dünyaya gelen önemli kişiler ve hayatını kaybedenler.`;
+    const title = `${day} ${monthNames[month]} Doğumlar ve Ölümler | Bugünün Tarihi`;
+    const desc = `${day} ${monthNames[month]} tarihinde dünyaya gelen ve hayatını kaybeden önemli kişiler. Tarihte bu gün doğanlar ve ölenler.`;
     document.querySelector("meta[property='og:title']")?.setAttribute("content", title);
     document.querySelector("meta[property='og:description']")?.setAttribute("content", desc);
     document.querySelector("meta[name='twitter:title']")?.setAttribute("content", title);
@@ -188,8 +158,9 @@ export default function BirthsAndDeaths() {
     const schema = {
       "@context": "https://schema.org",
       "@type": "Article",
-      headline: `${day} ${monthNames[month]} Doğumlar ve Ölümler`,
-      description: `${day} ${monthNames[month]} tarihinde dünyaya gelen önemli kişiler ve hayatını kaybedenler.`,
+      headline: `${day} ${monthNames[month]} Doğumlar ve Ölümler | Bugünün Tarihi`,
+      description: `${day} ${monthNames[month]} tarihinde dünyaya gelen ve hayatını kaybeden önemli kişiler. Tarihte bu gün doğanlar ve ölenler.`,
+      keywords: `${day} ${monthNames[month]} doğumlar ölümler, bugün ne oldu, bugünün tarihi, tarihte bu gün`,
       datePublished: `${year}-${month}-${day}`,
       dateModified: `${year}-${month}-${day}`,
       mainEntityOfPage: {
@@ -263,49 +234,53 @@ export default function BirthsAndDeaths() {
         </div>
 
         {/* İKİ KOLONLU TASARIM */}
-        <div className="two-column-layout">
-          {/* DOĞUMLAR */}
-          <div className="column">
-            <div className="column-header">
-              <h2>🌱 Doğumlar</h2>
+        {loading ? (
+          <p className="no-data">Yükleniyor…</p>
+        ) : (
+          <div className="two-column-layout">
+            {/* DOĞUMLAR */}
+            <div className="column">
+              <div className="column-header">
+                <h2>🌱 Doğumlar</h2>
+              </div>
+              <div className="column-content">
+                {births.length > 0 ? (
+                  births.map((e, i) => (
+                    <div key={i} className="event-item birth-item">
+                      <span className="year">{e.year}</span>
+                      <span className="event-text">
+                        {lang === "en" && e.text_en ? e.text_en : e.text}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="no-data">Bu tarihte doğum kaydı bulunamadı.</p>
+                )}
+              </div>
             </div>
-            <div className="column-content">
-              {births.length > 0 ? (
-                births.map((e, i) => (
-                  <div key={i} className="event-item birth-item">
-                    <span className="year">{e.year}</span>
-                    <span className="event-text">
-                      {lang === "en" && e.text_en ? e.text_en : e.text}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="no-data">Bu tarihte doğum kaydı bulunamadı.</p>
-              )}
-            </div>
-          </div>
 
-          {/* ÖLÜMLER */}
-          <div className="column">
-            <div className="column-header">
-              <h2>🕊️ Ölümler</h2>
-            </div>
-            <div className="column-content">
-              {deaths.length > 0 ? (
-                deaths.map((e, i) => (
-                  <div key={i} className="event-item death-item">
-                    <span className="year">{e.year}</span>
-                    <span className="event-text">
-                      {lang === "en" && e.text_en ? e.text_en : e.text}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="no-data">Bu tarihte ölüm kaydı bulunamadı.</p>
-              )}
+            {/* ÖLÜMLER */}
+            <div className="column">
+              <div className="column-header">
+                <h2>🕊️ Ölümler</h2>
+              </div>
+              <div className="column-content">
+                {deaths.length > 0 ? (
+                  deaths.map((e, i) => (
+                    <div key={i} className="event-item death-item">
+                      <span className="year">{e.year}</span>
+                      <span className="event-text">
+                        {lang === "en" && e.text_en ? e.text_en : e.text}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="no-data">Bu tarihte ölüm kaydı bulunamadı.</p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

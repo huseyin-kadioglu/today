@@ -1,11 +1,9 @@
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, Routes, Route, Link } from "react-router-dom";
 import "./App.css";
 import BirthsAndDeaths from "./BirthsAndDeaths.jsx";
 import TerminalActions from "./TerminalActions.jsx";
-
-const SHEET_ID = "1yHFAy4yCOkEfDpJS0l8HV1jwI8cwJz3A4On6yJvblgQ";
-const SHEET_NAME = "Sheet1";
+import { getEvents } from "./firestore.js";
 
 const monthMap = {
   ocak: "01",
@@ -71,9 +69,6 @@ function getAdjacentDate(day, month, offset) {
   };
 }
 
-// Route değişimlerinde yeniden fetch yapılmasın
-let _eventsCache = null;
-
 export default function App() {
   return (
     <Routes>
@@ -89,7 +84,8 @@ function MainApp() {
   const navigate = useNavigate();
   const pickerRef = useRef(null);
 
-  const [allEvents, setAllEvents] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [day, setDay] = useState(null);
   const [month, setMonth] = useState(null);
   const [open, setOpen] = useState(false);
@@ -105,8 +101,7 @@ function MainApp() {
   /* SEO – TARAYICI BAŞLIĞI */
   useEffect(() => {
     if (!day || !month) return;
-
-    document.title = `${day} ${monthNames[month]} Tarihte Ne Oldu?`;
+    document.title = `${day} ${monthNames[month]} Tarihte Ne Oldu? | Bugünün Tarihi`;
   }, [day, month]);
 
   /* URL → TARİH */
@@ -127,43 +122,17 @@ function MainApp() {
     }
   }, [location.pathname, navigate]);
 
-  /* DATA */
+  /* DATA – Firestore'dan sadece o günün verisi */
   useEffect(() => {
-    if (_eventsCache) {
-      setAllEvents(_eventsCache);
-      return;
-    }
-    fetch(
-      `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`,
-    )
-      .then((r) => r.text())
-      .then((t) => {
-        const json = JSON.parse(t.substring(47).slice(0, -2));
-        let current = null;
-        const parsed = [];
-        json.table.rows.forEach((r) => {
-          const d = r.c[0]?.v;
-          if (d) current = String(d).padStart(4, "0");
-          if (current && r.c[1]?.v && r.c[2]?.v) {
-            parsed.push({
-              date: current,
-              year: r.c[1].v,
-              text: r.c[2].v,
-              stoic: r.c[3]?.v || null,
-              // EN metni Sheets'te 5. kolon (index 4) olarak eklenmeli
-              text_en: r.c[4]?.v || null,
-            });
-          }
-        });
-        _eventsCache = parsed;
-        setAllEvents(parsed);
-      });
-  }, []);
-
-  const events = useMemo(
-    () => allEvents.filter((e) => e.date === `${day}${month}`),
-    [allEvents, day, month],
-  );
+    if (!day || !month) return;
+    setLoading(true);
+    getEvents(`${day}${month}`)
+      .then((data) => {
+        setEvents(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [day, month]);
 
   const stoic = events.find((e) => e.stoic)?.stoic;
 
@@ -216,46 +185,36 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
   const copyImage = async (e) => {
     const size = 1080;
     const cx   = size / 2;
-    const hp   = 108; // horizontal padding
+    const hp   = 108;
 
     const canvas = document.createElement("canvas");
     const ctx    = canvas.getContext("2d");
     canvas.width  = size;
     canvas.height = size;
 
-    /* Arka plan – uygulamanın --bg rengi */
     ctx.fillStyle = "#e8e3d8";
     ctx.fillRect(0, 0, size, size);
 
-    /* Kart – uygulamanın --surface rengi */
     ctx.fillStyle = "#f4f1ea";
     roundRect(ctx, 52, 52, size - 104, size - 104, 28);
     ctx.fill();
 
-    /* Kart çerçevesi */
     ctx.strokeStyle = "#c8c1b8";
     ctx.lineWidth = 1.5;
     roundRect(ctx, 52, 52, size - 104, size - 104, 28);
     ctx.stroke();
 
-    /* Yıl – en üst, büyük, accent rengi */
     const yearDisplay = e.year < 0 ? `MÖ ${Math.abs(e.year)}` : String(e.year);
     ctx.fillStyle = "#8b5e34";
     ctx.font = "500 128px 'IBM Plex Mono', monospace";
     ctx.textAlign = "center";
     ctx.fillText(yearDisplay, cx, 248);
 
-    /* Gün */
     ctx.fillStyle = "#6f675d";
     ctx.font = "400 30px 'IBM Plex Mono', monospace";
     ctx.textAlign = "center";
-    ctx.fillText(
-      `${day} ${monthNames[month]}`.toUpperCase(),
-      cx,
-      310,
-    );
+    ctx.fillText(`${day} ${monthNames[month]}`.toUpperCase(), cx, 310);
 
-    /* Üst çizgi */
     ctx.strokeStyle = "#c8c1b8";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -263,7 +222,6 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
     ctx.lineTo(size - hp, 352);
     ctx.stroke();
 
-    /* Olay metni – dinamik font boyutu */
     const len = e.text.length;
     const fs  = len < 70 ? 40 : len < 130 ? 34 : len < 220 ? 29 : 25;
     ctx.fillStyle = "#1f1b16";
@@ -283,20 +241,17 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
       ctx.fillText(line.trim(), cx, textY + i * lineH)
     );
 
-    /* Alt çizgi */
     ctx.strokeStyle = "#c8c1b8";
     ctx.beginPath();
     ctx.moveTo(hp, 932);
     ctx.lineTo(size - hp, 932);
     ctx.stroke();
 
-    /* Logo */
     ctx.fillStyle = "#8b5e34";
     ctx.font = "700 20px 'IBM Plex Mono', monospace";
     ctx.textAlign = "left";
     ctx.fillText(">_", hp, 972);
 
-    /* Site URL */
     ctx.fillStyle = "#6f675d";
     ctx.font = "300 18px 'IBM Plex Mono', monospace";
     ctx.textAlign = "right";
@@ -336,49 +291,35 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
 
   useEffect(() => {
     if (!day || !month || !monthSlug[month]) return;
-
     const canonicalUrl = `https://bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
-
     let canonical = document.querySelector("link[rel='canonical']");
     if (!canonical) {
       canonical = document.createElement("link");
       canonical.rel = "canonical";
       document.head.appendChild(canonical);
     }
-
     canonical.href = canonicalUrl;
   }, [day, month]);
 
   useEffect(() => {
     if (!day || !month) return;
-
-    const title = `${day} ${monthNames[month]} Tarihte Ne Oldu?`;
-    const desc = `${day} ${monthNames[month]} tarihinde dünyada ve Türkiye’de yaşanan önemli olaylar.`;
-
-    document
-      .querySelector("meta[property='og:title']")
-      ?.setAttribute("content", title);
-    document
-      .querySelector("meta[property='og:description']")
-      ?.setAttribute("content", desc);
-    document
-      .querySelector("meta[name='twitter:title']")
-      ?.setAttribute("content", title);
-    document
-      .querySelector("meta[name='twitter:description']")
-      ?.setAttribute("content", desc);
+    const title = `${day} ${monthNames[month]} Tarihte Ne Oldu? | Bugünün Tarihi`;
+    const desc = `${day} ${monthNames[month]} tarihinde dünyada ve Türkiye'de ne oldu? Tarihte bu gün yaşanan önemli olaylar, doğumlar ve gelişmeler.`;
+    document.querySelector("meta[property='og:title']")?.setAttribute("content", title);
+    document.querySelector("meta[property='og:description']")?.setAttribute("content", desc);
+    document.querySelector("meta[name='twitter:title']")?.setAttribute("content", title);
+    document.querySelector("meta[name='twitter:description']")?.setAttribute("content", desc);
   }, [day, month]);
 
   useEffect(() => {
     if (!day || !month || !events.length) return;
-
     const year = new Date().getFullYear();
-
     const schema = {
       "@context": "https://schema.org",
       "@type": "Article",
-      headline: `${day} ${monthNames[month]} Tarihte Ne Oldu?`,
-      description: `${day} ${monthNames[month]} tarihinde yaşanan önemli olaylar.`,
+      headline: `${day} ${monthNames[month]} Tarihte Ne Oldu? | Bugünün Tarihi`,
+      description: `${day} ${monthNames[month]} tarihinde dünyada ve Türkiye'de ne oldu? Tarihte bu gün yaşanan önemli olaylar, doğumlar ve gelişmeler.`,
+      keywords: `${day} ${monthNames[month]} tarihte ne oldu, bugün ne oldu, bugünün tarihi, tarihte bu gün`,
       datePublished: `${year}-${month}-${day}`,
       dateModified: `${year}-${month}-${day}`,
       mainEntityOfPage: {
@@ -391,7 +332,6 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
         url: "https://bugununtarihi.com.tr",
       },
     };
-
     let el = document.getElementById("schema-article");
     if (!el) {
       el = document.createElement("script");
@@ -413,7 +353,7 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
         {day} {monthNames[month]} Tarihte Ne Oldu?
       </h1>
       <p className="visually-hidden">
-        {day} {monthNames[month]} tarihinde dünyada ve Türkiye’de yaşanan önemli
+        {day} {monthNames[month]} tarihinde dünyada ve Türkiye'de yaşanan önemli
         olaylar, doğumlar ve tarihi gelişmeler listelenmektedir.
       </p>
 
@@ -488,46 +428,50 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
 
         {stoic && <p className="stoic">{stoic}</p>}
 
-        <ul className="events">
-          {events.map((e, i) => (
-            <li
-              key={i}
-              className={openMenu === i ? "menu-open" : ""}
-              style={{ animationDelay: `${i * 40}ms` }}
-            >
-              <span className="year">{e.year}</span>
-              <span className="event-text">
-                {lang === "en" && e.text_en ? e.text_en : e.text}
-              </span>
+        {loading ? (
+          <p className="no-data">Yükleniyor…</p>
+        ) : (
+          <ul className="events">
+            {events.map((e, i) => (
+              <li
+                key={i}
+                className={openMenu === i ? "menu-open" : ""}
+                style={{ animationDelay: `${i * 40}ms` }}
+              >
+                <span className="year">{e.year < 0 ? `MÖ ${Math.abs(e.year)}` : e.year}</span>
+                <span className="event-text">
+                  {lang === "en" && e.text_en ? e.text_en : e.text}
+                </span>
 
-              <div className="event-actions">
-                <button
-                  className={`dots ${openMenu === i ? "active" : ""}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenMenu(openMenu === i ? null : i);
-                  }}
-                >
-                  …
-                </button>
+                <div className="event-actions">
+                  <button
+                    className={`dots ${openMenu === i ? "active" : ""}`}
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      setOpenMenu(openMenu === i ? null : i);
+                    }}
+                  >
+                    …
+                  </button>
 
-                {openMenu === i && (
-                  <div className="action-menu">
-                    <button onClick={() => copyText(e)}>Metni kopyala</button>
-                    <button
-                      onClick={() => {
-                        copyImage(e);
-                        setOpenMenu(null);
-                      }}
-                    >
-                      Görseli kopyala
-                    </button>
-                  </div>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
+                  {openMenu === i && (
+                    <div className="action-menu">
+                      <button onClick={() => copyText(e)}>Metni kopyala</button>
+                      <button
+                        onClick={() => {
+                          copyImage(e);
+                          setOpenMenu(null);
+                        }}
+                      >
+                        Görseli kopyala
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
