@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bugununtarihi.com.tr/sitemap.xml

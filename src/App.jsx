@@ -73,7 +73,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<MainApp />} />
-      <Route path="/:date/:pageType" element={<BirthsAndDeaths />} />
+<Route path="/:date/:pageType" element={<BirthsAndDeaths />} />
       <Route path="/:date" element={<MainApp />} />
     </Routes>
   );
