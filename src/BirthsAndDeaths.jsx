@@ -231,6 +231,8 @@ export default function BirthsAndDeaths() {
           </span>
           <span className="tab-dot">·</span>
           <span className="tab tab-active">Doğumlar &amp; Ölümler</span>
+          <span className="tab-dot">·</span>
+          <Link to="/quiz" className="tab">Günlük Quiz</Link>
         </div>
 
         {/* İKİ KOLONLU TASARIM */}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 export default function TerminalActions({ lang, onToggleLang }) {
   const [showPanel, setShowPanel] = useState(false);
