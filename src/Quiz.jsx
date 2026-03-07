@@ -16,7 +16,10 @@ function norm(s) {
     .replace(/[üÜ]/g,"u").replace(/[öÖ]/g,"o").replace(/[ğĞ]/g,"g");
 }
 function hasProfanity(t) { const n=norm(t); return BANNED.some(w=>n.includes(norm(w))); }
-function todayKey() { return new Date().toISOString().slice(0,10); }
+function todayKey() {
+  const d = new Date(Date.now() + 3 * 60 * 60 * 1000);
+  return d.toISOString().slice(0, 10);
+}
 function scoreFor(correct, ms) {
   return correct ? 100 + Math.round(Math.max(0,1-ms/(Q_TIME*1000))*50) : 0;
 }
