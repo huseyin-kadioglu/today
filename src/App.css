@@ -605,8 +605,12 @@ body {
   cursor: pointer;
   padding: 0;
   margin-right: auto;
+  text-decoration: none;
 }
 .qz-back:hover { color: var(--accent); }
+.qz-header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-left: auto; }
+.qz-home-link { font-size: 10px; color: var(--muted); text-decoration: none; }
+.qz-home-link:hover { color: var(--accent); text-decoration: underline; }
 .qz-title {
   font-family: "IBM Plex Mono", monospace;
   font-size: 12px;
@@ -638,6 +642,7 @@ body {
 .qz-input:focus { border-bottom-color: var(--accent); }
 .qz-input::placeholder { color: var(--border); }
 .qz-err { font-size: 11px; color: #e57373; margin: 0; }
+.qz-saved-name { display: flex; align-items: center; gap: 12px; font-size: 15px; padding: 4px 0; border-bottom: 1px solid var(--border); }
 .qz-actions { display: flex; align-items: center; gap: 20px; }
 .qz-btn {
   font-family: "IBM Plex Mono", monospace;
@@ -819,3 +824,78 @@ body {
   color: var(--accent);
   margin-top: 4px;
 }
+
+/* ── QUIZ HUB ────────────────────────────────────────────── */
+
+.qh-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 28px;
+}
+
+@media (max-width: 480px) {
+  .qh-grid { grid-template-columns: 1fr; }
+}
+
+.qh-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 24px 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  text-decoration: none;
+  color: var(--text);
+  position: relative;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+a.qh-card:hover {
+  border-color: var(--accent);
+  background: #ede8df;
+}
+
+.qh-card-soon {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.qh-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--muted);
+}
+
+.qh-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.qh-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.qh-desc {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.qh-arrow {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+/* ── FLAG IMAGE ── */
+.qz-flag { display: block; width: 200px; max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: 6px; margin: 0 auto 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.qz-flag-sm { width: 28px; height: auto; border: 1px solid var(--border); border-radius: 2px; vertical-align: middle; margin-right: 6px; }

@@ -57,17 +57,64 @@ export async function getDailyQuestions(count = 10) {
     const snap = await getDocs(collection(db, "quiz_questions"));
     _questionsCache.data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   }
-  const today = new Date();
+  const today = new Date(Date.now() + 3 * 60 * 60 * 1000);
   const seed =
-    today.getFullYear() * 10000 +
-    (today.getMonth() + 1) * 100 +
-    today.getDate();
+    today.getUTCFullYear() * 10000 +
+    (today.getUTCMonth() + 1) * 100 +
+    today.getUTCDate();
   return seededShuffle(_questionsCache.data, seed).slice(0, count);
 }
 
+const _flagCache = { data: null };
+
+export async function getDailyFlagQuestions() {
+  if (!_flagCache.data) {
+    const snap = await getDocs(
+      query(collection(db, "quiz_questions"), where("category", "==", "bayraklar"))
+    );
+    _flagCache.data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  }
+  const all    = _flagCache.data;
+  const easy   = all.filter((q) => q.difficulty === "easy");
+  const medium = all.filter((q) => q.difficulty === "medium");
+  const hard   = all.filter((q) => q.difficulty === "hard");
+
+  const today = new Date(Date.now() + 3 * 60 * 60 * 1000);
+  const seed  =
+    today.getUTCFullYear() * 10000 +
+    (today.getUTCMonth() + 1) * 100 +
+    today.getUTCDate();
+
+  const picked = [
+    ...seededShuffle(easy,   seed).slice(0, 3),
+    ...seededShuffle(medium, seed + 1).slice(0, 4),
+    ...seededShuffle(hard,   seed + 2).slice(0, 3),
+  ];
+  return seededShuffle(picked, seed + 3);
+}
+
+// UTC+3 (Türkiye) bazlı tarih anahtarı
+function dateKeyTR() {
+  return new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+// Bu haftanın Pazartesi günü (UTC+3)
+function weekCutoffTR() {
+  const nowUTC3 = new Date(Date.now() + 3 * 60 * 60 * 1000);
+  const day = nowUTC3.getUTCDay(); // 0=Paz, 1=Pzt...
+  const daysFromMonday = day === 0 ? 6 : day - 1;
+  return new Date(+nowUTC3 - daysFromMonday * 86400000).toISOString().slice(0, 10);
+}
+
+// Bu yılın 1 Ocak tarihi (UTC+3)
+function yearCutoffTR() {
+  const year = new Date(Date.now() + 3 * 60 * 60 * 1000).getUTCFullYear();
+  return `${year}-01-01`;
+}
+
 // ── Quiz: Submit score ────────────────────────────────────────────────────────
-export async function submitScore({ username, score, correct, total, timeMs }) {
-  const dateKey = new Date().toISOString().slice(0, 10);
+export async function submitScore({ username, score, correct, total, timeMs, category = "genel-kultur" }) {
+  const dateKey = dateKeyTR();
   return addDoc(collection(db, "quiz_scores"), {
     username,
     score,
@@ -75,32 +122,50 @@ export async function submitScore({ username, score, correct, total, timeMs }) {
     total,
     timeMs,
     dateKey,
+    category,
     createdAt: serverTimestamp(),
   });
 }
 
 // ── Quiz: Leaderboard ─────────────────────────────────────────────────────────
-export async function getLeaderboard(period) {
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
+export async function getLeaderboard(period, category = "genel-kultur") {
+  const todayStr = dateKeyTR();
 
   let q;
   if (period === "daily") {
     q = query(
       collection(db, "quiz_scores"),
+      where("category", "==", category),
       where("dateKey", "==", todayStr)
     );
   } else {
-    const days = period === "weekly" ? 7 : 365;
-    const cutoff = new Date(now - days * 86400000).toISOString().slice(0, 10);
+    const cutoff = period === "weekly" ? weekCutoffTR() : yearCutoffTR();
     q = query(
       collection(db, "quiz_scores"),
+      where("category", "==", category),
       where("dateKey", ">=", cutoff)
     );
   }
 
   const snap = await getDocs(q);
-  const scores = snap.docs.map((d) => d.data());
-  scores.sort((a, b) => b.score - a.score);
-  return scores.slice(0, 10);
+  const raw = snap.docs.map((d) => d.data());
+
+  if (period === "daily") {
+    raw.sort((a, b) => b.score - a.score);
+    return raw.slice(0, 10);
+  }
+
+  // weekly / yearly: aggregate per username
+  const byUser = {};
+  for (const s of raw) {
+    const u = s.username;
+    if (!byUser[u]) byUser[u] = { username: u, score: 0, correct: 0, total: 0, plays: 0 };
+    byUser[u].score   += s.score;
+    byUser[u].correct += s.correct;
+    byUser[u].total   += s.total;
+    byUser[u].plays   += 1;
+  }
+  const agg = Object.values(byUser);
+  agg.sort((a, b) => b.score - a.score);
+  return agg.slice(0, 10);
 }

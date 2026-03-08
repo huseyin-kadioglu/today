@@ -4,6 +4,7 @@ import "./App.css";
 import BirthsAndDeaths from "./BirthsAndDeaths.jsx";
 import TerminalActions from "./TerminalActions.jsx";
 import Quiz from "./Quiz.jsx";
+import QuizHub from "./QuizHub.jsx";
 import { getEvents } from "./firestore.js";
 
 const monthMap = {
@@ -74,7 +75,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<MainApp />} />
-      <Route path="/quiz" element={<Quiz />} />
+      <Route path="/quiz" element={<QuizHub />} />
+      <Route path="/quiz/:category" element={<Quiz />} />
       <Route path="/:date/:pageType" element={<BirthsAndDeaths />} />
       <Route path="/:date" element={<MainApp />} />
     </Routes>

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { getDailyQuestions, submitScore, getLeaderboard } from "./firestore.js";
+import { useNavigate, Link, useParams } from "react-router-dom";
+import { getDailyQuestions, getDailyFlagQuestions, submitScore, getLeaderboard } from "./firestore.js";
 
-const Q_TIME = 25;
 const Q_COUNT = 10;
 const LETTERS = ["A", "B", "C", "D"];
 
@@ -20,8 +19,8 @@ function todayKey() {
   const d = new Date(Date.now() + 3 * 60 * 60 * 1000);
   return d.toISOString().slice(0, 10);
 }
-function scoreFor(correct, ms) {
-  return correct ? 100 + Math.round(Math.max(0,1-ms/(Q_TIME*1000))*50) : 0;
+function scoreFor(correct, ms, qTime) {
+  return correct ? 100 + Math.round(Math.max(0,1-ms/(qTime*1000))*50) : 0;
 }
 function fmtTime(ms) {
   const s=Math.round(ms/1000);
@@ -59,10 +58,21 @@ function badgeFor(streak) {
 
 const TABS = [["daily","günlük"],["weekly","haftalık"],["yearly","yıllık"]];
 
+const CATEGORY_META = {
+  "bayraklar": { title: "Bayraklar", desc: "10 bayrak · 25 saniye · kolaydan zora · günde 1 hak", qTime: 25 },
+};
+function categoryMeta(cat) {
+  return CATEGORY_META[cat] || { title: "Genel Kültür", desc: "10 soru · 25 saniye · karışık · günde 1 hak", qTime: 25 };
+}
+
 export default function Quiz() {
   const navigate = useNavigate();
+  const { category = "genel-kultur" } = useParams();
+  const meta = categoryMeta(category);
+  const Q_TIME = meta.qTime;
 
-  const [phase,    setPhase]    = useState("name");
+  const [phase,      setPhase]      = useState("name");
+  const [editingName, setEditingName] = useState(() => !localStorage.getItem("quiz_username"));
   const [username, setUsername] = useState(()=>localStorage.getItem("quiz_username")||"");
   const [nameErr,  setNameErr]  = useState("");
   const [loading,  setLoading]  = useState(false);
@@ -83,11 +93,13 @@ export default function Quiz() {
   const qStartRef    = useRef(Date.now());
   const selectingRef = useRef(false);
 
+  const lsKey = `quiz_${category}_${todayKey()}`;
+
   // Init
   useEffect(() => {
     const { count } = readStreak();
     setStreak(count);
-    const stored = localStorage.getItem(`quiz_${todayKey()}`);
+    const stored = localStorage.getItem(lsKey);
     if (stored) { setPlayedToday(JSON.parse(stored)); setPhase("board"); }
     else        { setPlayedToday(null); }
   }, []);
@@ -97,7 +109,7 @@ export default function Quiz() {
     if (phase !== "board") return;
     if (board[boardTab] !== undefined) return;
     setBoardLoading(true);
-    getLeaderboard(boardTab)
+    getLeaderboard(boardTab, category)
       .then(data => setBoard(p=>({...p,[boardTab]:data})))
       .catch(()   => setBoard(p=>({...p,[boardTab]:[]})))
       .finally(() => setBoardLoading(false));
@@ -129,7 +141,7 @@ export default function Quiz() {
     const q  = questions[qi];
     const ok = idx!==null && idx===q.correctIndex;
     setChosen(idx===null?-1:idx);
-    const ans = { chosen:idx, correct:ok, timeMs:ms, score:scoreFor(ok,ms) };
+    const ans = { chosen:idx, correct:ok, timeMs:ms, score:scoreFor(ok,ms,Q_TIME) };
     setTimeout(()=>{
       const next = [...answers, ans];
       if (qi+1<questions.length) { setAnswers(next); setQi(q=>q+1); setChosen(null); }
@@ -143,12 +155,12 @@ export default function Quiz() {
     const correct = all.filter(a=>a.correct).length;
     const ms      = all.reduce((s,a)=>s+a.timeMs, 0);
     const result  = { score, correct, total:all.length, timeMs:ms };
-    localStorage.setItem(`quiz_${todayKey()}`, JSON.stringify(result));
+    localStorage.setItem(lsKey, JSON.stringify(result));
     setPlayedToday(result);
     const newStreak = bumpStreak();
     setStreak(newStreak);
     setBoard({});
-    try { await submitScore({ username:username.trim(), ...result, streak:newStreak }); }
+    try { await submitScore({ username:username.trim(), ...result, streak:newStreak, category }); }
     catch(e){ console.error("submitScore:",e); }
   }
 
@@ -159,9 +171,12 @@ export default function Quiz() {
     if (hasProfanity(name))    { setNameErr("Uygunsuz kelime içeriyor."); return; }
     setNameErr("");
     localStorage.setItem("quiz_username",name);
+    setEditingName(false);
     setLoading(true);
     try {
-      const qs = await getDailyQuestions(Q_COUNT);
+      const qs = category === "bayraklar"
+        ? await getDailyFlagQuestions()
+        : await getDailyQuestions(Q_COUNT);
       if (!qs.length) { setNameErr("Henüz soru yüklenmemiş."); setLoading(false); return; }
       setQuestions(qs); setQi(0); setAnswers([]); setChosen(null);
       setPhase("play");
@@ -187,11 +202,14 @@ export default function Quiz() {
 
         {/* header */}
         <div className="qz-header">
-          <button className="qz-back" onClick={()=>navigate(-1)}>← geri</button>
+          <button className="qz-back" onClick={()=>navigate("/quiz")}>← geri</button>
           <span className="qz-title">quiz</span>
-          <span className="qz-sub">
-            {new Date().toLocaleDateString("tr-TR",{day:"numeric",month:"long"})}
-          </span>
+          <div className="qz-header-right">
+            <span className="qz-sub">
+              {new Date().toLocaleDateString("tr-TR",{day:"numeric",month:"long"})}
+            </span>
+            <Link to="/" className="qz-home-link">ana sayfa</Link>
+          </div>
         </div>
 
         {/* ── NAME ── */}
@@ -202,19 +220,26 @@ export default function Quiz() {
                 {badge ? `${badge.icon} ${badge.label}` : `🔥 ${streak} günlük serin var`}
               </div>
             )}
-            <p className="qz-desc">{Q_COUNT} soru · {Q_TIME}s · zor · günde 1 hak</p>
+            <p className="qz-desc">{meta.desc}</p>
             <div className="qz-field">
               <label className="qz-label">takma adın</label>
-              <input
-                className="qz-input"
-                type="text"
-                value={username}
-                onChange={e=>{setUsername(e.target.value);setNameErr("");}}
-                onKeyDown={e=>e.key==="Enter"&&startQuiz()}
-                placeholder="…"
-                maxLength={20}
-                autoFocus
-              />
+              {editingName || !username ? (
+                <input
+                  className="qz-input"
+                  type="text"
+                  value={username}
+                  onChange={e=>{setUsername(e.target.value);setNameErr("");}}
+                  onKeyDown={e=>e.key==="Enter"&&startQuiz()}
+                  placeholder="…"
+                  maxLength={20}
+                  autoFocus
+                />
+              ) : (
+                <div className="qz-saved-name">
+                  <span>{username}</span>
+                  <button className="qz-link" type="button" onClick={()=>setEditingName(true)}>değiştir</button>
+                </div>
+              )}
               {nameErr && <p className="qz-err">{nameErr}</p>}
             </div>
             <div className="qz-actions">
@@ -238,7 +263,10 @@ export default function Quiz() {
             <div className="qz-bar">
               <div className="qz-bar-fill" style={{width:`${pct}%`,background:timeLeft<=5?"#e57373":"var(--accent)"}}/>
             </div>
-            <p className="qz-q">{q.question}</p>
+            {q.flagUrl && (
+              <img className="qz-flag" src={q.flagUrl} alt="bayrak" loading="eager" />
+            )}
+            <p className="qz-q">{q.question || "Bu bayrak hangi ülkeye ait?"}</p>
             <div className="qz-opts">
               {q.options.map((opt,i)=>{
                 let c="qz-opt";
@@ -287,7 +315,12 @@ export default function Quiz() {
                 {answers.map((a,i)=>(
                   <div key={i} className={`qz-row ${a.correct?"qz-row-ok":"qz-row-wrong"}`}>
                     <span>{a.correct?"✓":"✗"}</span>
-                    <span className="qz-row-q">{questions[i]?.question}</span>
+                    <span className="qz-row-q">
+                      {questions[i]?.flagUrl
+                        ? <><img className="qz-flag-sm" src={questions[i].flagUrl} alt=""/>{" "}{questions[i].options[questions[i].correctIndex]}</>
+                        : questions[i]?.question
+                      }
+                    </span>
                     <span>+{a.score}</span>
                   </div>
                 ))}
@@ -327,13 +360,19 @@ export default function Quiz() {
               ) : board[boardTab].length===0 ? (
                 <p className="qz-empty">henüz kayıt yok.</p>
               ) : (<>
-                <div className="qz-list-head"><span>#</span><span>kullanıcı</span><span>puan</span><span>d/y</span></div>
+                {boardTab==="daily"
+                  ? <div className="qz-list-head"><span>#</span><span>kullanıcı</span><span>puan</span><span>d/y</span></div>
+                  : <div className="qz-list-head"><span>#</span><span>kullanıcı</span><span>toplam</span><span>oynama</span></div>
+                }
                 {board[boardTab].map((r,i)=>(
                   <div key={i} className={`qz-list-row${r.username===username?" qz-list-me":""}`}>
                     <span className="qz-rank">{i===0?"·1·":i===1?"·2·":i===2?"·3·":i+1}</span>
                     <span className="qz-uname">{r.username}</span>
                     <span className="qz-pts">{r.score}</span>
-                    <span className="qz-ratio">{r.correct}/{r.total}</span>
+                    {boardTab==="daily"
+                      ? <span className="qz-ratio">{r.correct}/{r.total}</span>
+                      : <span className="qz-ratio">{r.plays}x</span>
+                    }
                   </div>
                 ))}
               </>)}
