@@ -899,3 +899,11 @@ a.qh-card:hover {
 /* ── FLAG IMAGE ── */
 .qz-flag { display: block; width: 200px; max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: 6px; margin: 0 auto 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 .qz-flag-sm { width: 28px; height: auto; border: 1px solid var(--border); border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+/* ── SORT TOGGLE ── */
+.qz-sort-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.qz-sort-label { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
+.qz-sort-btn { font-family: "IBM Plex Mono", monospace; font-size: 10px; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+.qz-sort-btn.qz-sort-active { color: var(--accent); border-color: var(--accent); }
+/* wider 5-col board for weekly/alltime */
+.qz-list--wide .qz-list-head,
+.qz-list--wide .qz-list-row { grid-template-columns: 36px 1fr 52px 36px 30px; }

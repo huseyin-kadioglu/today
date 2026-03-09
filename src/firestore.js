@@ -65,7 +65,44 @@ export async function getDailyQuestions(count = 10) {
   return seededShuffle(_questionsCache.data, seed).slice(0, count);
 }
 
-const _flagCache = { data: null };
+const _flagCache    = { data: null };
+const _categoryCache = {};
+
+// Difficulty-weighted selection for any category that has difficulty fields
+export async function getDailyCategoryQuestions(category, count = 10) {
+  if (!_categoryCache[category]) {
+    const snap = await getDocs(
+      query(collection(db, "quiz_questions"), where("category", "==", category))
+    );
+    _categoryCache[category] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  }
+  const all      = _categoryCache[category];
+  const easy     = all.filter((q) => q.difficulty === "easy");
+  const medium   = all.filter((q) => q.difficulty === "medium");
+  const hard     = all.filter((q) => q.difficulty === "hard");
+  const veryHard = all.filter((q) => q.difficulty === "very_hard");
+
+  const today = new Date(Date.now() + 3 * 60 * 60 * 1000);
+  const seed  =
+    today.getUTCFullYear() * 10000 +
+    (today.getUTCMonth() + 1) * 100 +
+    today.getUTCDate();
+
+  if (!easy.length && !medium.length && !hard.length && !veryHard.length) {
+    return seededShuffle(all, seed).slice(0, count);
+  }
+  const eCount  = Math.min(2, easy.length);
+  const mCount  = Math.min(3, medium.length);
+  const hCount  = Math.min(3, hard.length);
+  const vhCount = Math.min(2, veryHard.length);
+  const picked = [
+    ...seededShuffle(easy,     seed).slice(0, eCount),
+    ...seededShuffle(medium,   seed + 1).slice(0, mCount),
+    ...seededShuffle(hard,     seed + 2).slice(0, hCount),
+    ...seededShuffle(veryHard, seed + 3).slice(0, vhCount),
+  ];
+  return seededShuffle(picked, seed + 4);
+}
 
 export async function getDailyFlagQuestions() {
   if (!_flagCache.data) {
@@ -74,10 +111,11 @@ export async function getDailyFlagQuestions() {
     );
     _flagCache.data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   }
-  const all    = _flagCache.data;
-  const easy   = all.filter((q) => q.difficulty === "easy");
-  const medium = all.filter((q) => q.difficulty === "medium");
-  const hard   = all.filter((q) => q.difficulty === "hard");
+  const all      = _flagCache.data;
+  const easy     = all.filter((q) => q.difficulty === "easy");
+  const medium   = all.filter((q) => q.difficulty === "medium");
+  const hard     = all.filter((q) => q.difficulty === "hard");
+  const veryHard = all.filter((q) => q.difficulty === "very_hard");
 
   const today = new Date(Date.now() + 3 * 60 * 60 * 1000);
   const seed  =
@@ -86,11 +124,12 @@ export async function getDailyFlagQuestions() {
     today.getUTCDate();
 
   const picked = [
-    ...seededShuffle(easy,   seed).slice(0, 3),
-    ...seededShuffle(medium, seed + 1).slice(0, 4),
-    ...seededShuffle(hard,   seed + 2).slice(0, 3),
+    ...seededShuffle(easy,     seed).slice(0, 2),
+    ...seededShuffle(medium,   seed + 1).slice(0, 3),
+    ...seededShuffle(hard,     seed + 2).slice(0, 3),
+    ...seededShuffle(veryHard, seed + 3).slice(0, 2),
   ];
-  return seededShuffle(picked, seed + 3);
+  return seededShuffle(picked, seed + 4);
 }
 
 // UTC+3 (Türkiye) bazlı tarih anahtarı
@@ -138,12 +177,17 @@ export async function getLeaderboard(period, category = "genel-kultur") {
       where("category", "==", category),
       where("dateKey", "==", todayStr)
     );
-  } else {
-    const cutoff = period === "weekly" ? weekCutoffTR() : yearCutoffTR();
+  } else if (period === "weekly") {
     q = query(
       collection(db, "quiz_scores"),
       where("category", "==", category),
-      where("dateKey", ">=", cutoff)
+      where("dateKey", ">=", weekCutoffTR())
+    );
+  } else {
+    // alltime — no date filter
+    q = query(
+      collection(db, "quiz_scores"),
+      where("category", "==", category)
     );
   }
 

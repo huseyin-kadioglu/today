@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link, useParams } from "react-router-dom";
-import { getDailyQuestions, getDailyFlagQuestions, submitScore, getLeaderboard } from "./firestore.js";
+import { getDailyQuestions, getDailyFlagQuestions, getDailyCategoryQuestions, submitScore, getLeaderboard } from "./firestore.js";
 
 const Q_COUNT = 10;
 const LETTERS = ["A", "B", "C", "D"];
@@ -56,10 +56,11 @@ function badgeFor(streak) {
   return null;
 }
 
-const TABS = [["daily","günlük"],["weekly","haftalık"],["yearly","yıllık"]];
+const TABS = [["daily","günlük"],["weekly","haftalık"],["alltime","tüm zamanlar"]];
 
 const CATEGORY_META = {
-  "bayraklar": { title: "Bayraklar", desc: "10 bayrak · 25 saniye · kolaydan zora · günde 1 hak", qTime: 25 },
+  "bayraklar":  { title: "Bayraklar",   desc: "10 bayrak · 25 saniye · kolaydan zora · günde 1 hak",   qTime: 25 },
+  "baskentler": { title: "Başkentler",  desc: "10 soru · 25 saniye · kolaydan zora · günde 1 hak",     qTime: 25 },
 };
 function categoryMeta(cat) {
   return CATEGORY_META[cat] || { title: "Genel Kültür", desc: "10 soru · 25 saniye · karışık · günde 1 hak", qTime: 25 };
@@ -84,6 +85,7 @@ export default function Quiz() {
   const [timeLeft,  setTimeLeft]  = useState(Q_TIME);
 
   const [boardTab,     setBoardTab]     = useState("daily");
+  const [boardSort,    setBoardSort]    = useState("score");
   const [board,        setBoard]        = useState({});
   const [boardLoading, setBoardLoading] = useState(false);
 
@@ -176,7 +178,9 @@ export default function Quiz() {
     try {
       const qs = category === "bayraklar"
         ? await getDailyFlagQuestions()
-        : await getDailyQuestions(Q_COUNT);
+        : category === "genel-kultur" || !category
+        ? await getDailyQuestions(Q_COUNT)
+        : await getDailyCategoryQuestions(category, Q_COUNT);
       if (!qs.length) { setNameErr("Henüz soru yüklenmemiş."); setLoading(false); return; }
       setQuestions(qs); setQi(0); setAnswers([]); setChosen(null);
       setPhase("play");
@@ -354,28 +358,44 @@ export default function Quiz() {
                 <button key={k} className={`qz-tab${boardTab===k?" qz-tab-on":""}`} onClick={()=>setBoardTab(k)}>{l}</button>
               ))}
             </div>
-            <div className="qz-list">
+            {boardTab!=="daily" && (
+              <div className="qz-sort-row">
+                <span className="qz-sort-label">sırala:</span>
+                <button className={`qz-sort-btn${boardSort==="score"?" qz-sort-active":""}`} onClick={()=>setBoardSort("score")}>puan</button>
+                <button className={`qz-sort-btn${boardSort==="accuracy"?" qz-sort-active":""}`} onClick={()=>setBoardSort("accuracy")}>% doğruluk</button>
+              </div>
+            )}
+            <div className={`qz-list${boardTab!=="daily"?" qz-list--wide":""}`}>
               {boardLoading||board[boardTab]===undefined ? (
                 <p className="qz-empty">yükleniyor…</p>
               ) : board[boardTab].length===0 ? (
                 <p className="qz-empty">henüz kayıt yok.</p>
-              ) : (<>
-                {boardTab==="daily"
-                  ? <div className="qz-list-head"><span>#</span><span>kullanıcı</span><span>puan</span><span>d/y</span></div>
-                  : <div className="qz-list-head"><span>#</span><span>kullanıcı</span><span>toplam</span><span>oynama</span></div>
-                }
-                {board[boardTab].map((r,i)=>(
-                  <div key={i} className={`qz-list-row${r.username===username?" qz-list-me":""}`}>
-                    <span className="qz-rank">{i===0?"·1·":i===1?"·2·":i===2?"·3·":i+1}</span>
-                    <span className="qz-uname">{r.username}</span>
-                    <span className="qz-pts">{r.score}</span>
-                    {boardTab==="daily"
-                      ? <span className="qz-ratio">{r.correct}/{r.total}</span>
-                      : <span className="qz-ratio">{r.plays}x</span>
-                    }
-                  </div>
-                ))}
-              </>)}
+              ) : (()=>{
+                const acc = (r) => r.total > 0 ? r.correct / r.total : 0;
+                const sorted = [...board[boardTab]].sort((a,b) =>
+                  boardSort==="accuracy" ? acc(b)-acc(a) : b.score-a.score
+                );
+                return (<>
+                  {boardTab==="daily"
+                    ? <div className="qz-list-head"><span>#</span><span>kullanıcı</span><span>puan</span><span>d/t</span></div>
+                    : <div className="qz-list-head"><span>#</span><span>kullanıcı</span><span>puan</span><span>%</span><span>oyun</span></div>
+                  }
+                  {sorted.map((r,i)=>{
+                    const pct = r.total>0 ? Math.round(r.correct/r.total*100) : 0;
+                    return (
+                      <div key={i} className={`qz-list-row${r.username===username?" qz-list-me":""}`}>
+                        <span className="qz-rank">{i===0?"·1·":i===1?"·2·":i===2?"·3·":i+1}</span>
+                        <span className="qz-uname">{r.username}</span>
+                        <span className="qz-pts">{r.score}</span>
+                        {boardTab==="daily"
+                          ? <span className="qz-ratio">{r.correct}/{r.total}</span>
+                          : <><span className="qz-ratio">{pct}%</span><span className="qz-ratio">{r.plays}x</span></>
+                        }
+                      </div>
+                    );
+                  })}
+                </>);
+              })()}
             </div>
             {!playedToday && (
               <button className="qz-btn" style={{marginTop:20}} onClick={()=>setPhase("name")}>
