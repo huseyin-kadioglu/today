@@ -4,6 +4,7 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "false"
 
 # SPA fallback — prerender olmayan rotalar için (örn. /quiz/:category)
 [[redirects]]

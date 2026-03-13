@@ -40,7 +40,14 @@ export default defineConfig({
         renderAfterDocumentEvent: "app-rendered",
         timeout: 6000,
         launchOptions: {
-          args: ["--no-sandbox", "--disable-setuid-sandbox"],
+          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+          args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--single-process",
+          ],
         },
       }),
     }),
