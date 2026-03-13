@@ -5,6 +5,10 @@ import BirthsAndDeaths from "./BirthsAndDeaths.jsx";
 import TerminalActions from "./TerminalActions.jsx";
 import Quiz from "./Quiz.jsx";
 import QuizHub from "./QuizHub.jsx";
+import CookieBanner from "./CookieBanner.jsx";
+import PrivacyPolicy from "./PrivacyPolicy.jsx";
+import ArticlePage, { ArticleList } from "./ArticlePage.jsx";
+import { getSpecialDay } from "./specialDates.js";
 import { getEvents } from "./firestore.js";
 
 const monthMap = {
@@ -73,13 +77,19 @@ function getAdjacentDate(day, month, offset) {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<MainApp />} />
-      <Route path="/quiz" element={<QuizHub />} />
-      <Route path="/quiz/:category" element={<Quiz />} />
-      <Route path="/:date/:pageType" element={<BirthsAndDeaths />} />
-      <Route path="/:date" element={<MainApp />} />
-    </Routes>
+    <>
+      <CookieBanner />
+      <Routes>
+        <Route path="/" element={<MainApp />} />
+        <Route path="/quiz" element={<QuizHub />} />
+        <Route path="/quiz/:category" element={<Quiz />} />
+        <Route path="/gizlilik" element={<PrivacyPolicy />} />
+        <Route path="/makaleler" element={<ArticleList />} />
+        <Route path="/makale/:slug" element={<ArticlePage />} />
+        <Route path="/:date/:pageType" element={<BirthsAndDeaths />} />
+        <Route path="/:date" element={<MainApp />} />
+      </Routes>
+    </>
   );
 }
 
@@ -94,13 +104,6 @@ function MainApp() {
   const [month, setMonth] = useState(null);
   const [open, setOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
-  const [lang, setLang] = useState(() => localStorage.getItem("lang") || "tr");
-
-  const toggleLang = () => {
-    const next = lang === "tr" ? "en" : "tr";
-    localStorage.setItem("lang", next);
-    setLang(next);
-  };
 
   /* SEO – TARAYICI BAŞLIĞI */
   useEffect(() => {
@@ -134,8 +137,12 @@ function MainApp() {
       .then((data) => {
         setEvents(data);
         setLoading(false);
+        document.dispatchEvent(new Event("app-rendered"));
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setLoading(false);
+        document.dispatchEvent(new Event("app-rendered"));
+      });
   }, [day, month]);
 
   const stoic = events.find((e) => e.stoic)?.stoic;
@@ -350,9 +357,10 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
 
   const prev = getAdjacentDate(day, month, -1);
   const next = getAdjacentDate(day, month, 1);
+  const specialDay = getSpecialDay(day, month);
 
   return (
-    <div className="screen">
+    <div className={`screen${specialDay ? ` theme-${specialDay.theme}` : ""}`}>
       <h1 className="visually-hidden">
         {day} {monthNames[month]} Tarihte Ne Oldu?
       </h1>
@@ -362,7 +370,7 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
       </p>
 
       <div className="terminal">
-        <TerminalActions lang={lang} onToggleLang={toggleLang} />
+        <TerminalActions />
 
         {/* BAŞLIK PICKER */}
         <div className="title-picker" ref={pickerRef}>
@@ -430,9 +438,26 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
           </span>
           <span className="tab-dot">·</span>
           <Link to="/quiz" className="tab">Günlük Quiz</Link>
+          <span className="tab-dot">·</span>
+          <Link to="/makaleler" className="tab">Makaleler</Link>
         </div>
 
         {stoic && <p className="stoic">{stoic}</p>}
+
+        {specialDay && (
+          <div className="special-day-banner">
+            <span className="special-day-title">{specialDay.title}</span>
+            <span className="special-day-sub">{specialDay.subtitle}</span>
+            {specialDay.articleSlug && (
+              <Link
+                to={`/makale/${specialDay.articleSlug}`}
+                className="special-day-link"
+              >
+                Makaleyi oku →
+              </Link>
+            )}
+          </div>
+        )}
 
         {loading ? (
           <p className="no-data">Yükleniyor…</p>
@@ -446,7 +471,7 @@ bugununtarihi.com.tr/${day}-${monthSlug[month]}`;
               >
                 <span className="year">{e.year < 0 ? `MÖ ${Math.abs(e.year)}` : e.year}</span>
                 <span className="event-text">
-                  {lang === "en" && e.text_en ? e.text_en : e.text}
+                  {e.text}
                 </span>
 
                 <div className="event-actions">

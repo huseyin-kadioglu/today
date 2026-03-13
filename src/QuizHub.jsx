@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 
@@ -31,6 +31,7 @@ const CATEGORIES = [
 
 export default function QuizHub() {
   const navigate = useNavigate();
+  useEffect(() => { document.dispatchEvent(new Event("app-rendered")); }, []);
 
   return (
     <div className="screen">

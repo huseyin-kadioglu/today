@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 
-export default function TerminalActions({ lang, onToggleLang }) {
+export default function TerminalActions() {
   const [showPanel, setShowPanel] = useState(false);
   const wrapRef = useRef(null);
 
@@ -18,21 +19,14 @@ export default function TerminalActions({ lang, onToggleLang }) {
     <div className="floating-actions" ref={wrapRef}>
       {showPanel && (
         <div className="settings-panel">
-          <div className="settings-lang">
-            <button
-              className={`lang-btn${lang === "tr" ? " lang-active" : ""}`}
-              onClick={() => lang !== "tr" && onToggleLang()}
-            >
-              TR
-            </button>
-            <span className="lang-sep">|</span>
-            <button
-              className={`lang-btn${lang === "en" ? " lang-active" : ""}`}
-              onClick={() => lang !== "en" && onToggleLang()}
-            >
-              EN
-            </button>
-          </div>
+          <Link to="/quiz" className="settings-link" onClick={() => setShowPanel(false)}>
+            <span className="settings-icon">🧩</span>
+            Günlük Quiz
+          </Link>
+          <Link to="/makaleler" className="settings-link" onClick={() => setShowPanel(false)}>
+            <span className="settings-icon">📖</span>
+            Makaleler
+          </Link>
 
           <div className="settings-divider" />
 
@@ -52,13 +46,17 @@ export default function TerminalActions({ lang, onToggleLang }) {
             <span className="settings-icon">🎗️</span>
             LÖSEV'e bağış yap
           </a>
+          <Link to="/gizlilik" className="settings-link" onClick={() => setShowPanel(false)}>
+            <span className="settings-icon">🔒</span>
+            Gizlilik Politikası
+          </Link>
         </div>
       )}
 
       <button
         className={`settings-btn${showPanel ? " settings-btn-active" : ""}`}
         onClick={() => setShowPanel((s) => !s)}
-        title="Ayarlar"
+        title="Menü"
       >
         ⚙
       </button>

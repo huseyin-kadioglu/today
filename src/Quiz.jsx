@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link, useParams } from "react-router-dom";
-import { getDailyQuestions, getDailyFlagQuestions, getDailyCategoryQuestions, submitScore, getLeaderboard } from "./firestore.js";
+import { getDailyQuestions, getDailyFlagQuestions, getDailyCategoryQuestions, submitScore, getLeaderboard, getDailyParticipantCount } from "./firestore.js";
 
 const Q_COUNT = 10;
 const LETTERS = ["A", "B", "C", "D"];
@@ -89,8 +89,9 @@ export default function Quiz() {
   const [board,        setBoard]        = useState({});
   const [boardLoading, setBoardLoading] = useState(false);
 
-  const [playedToday, setPlayedToday] = useState(undefined);
-  const [streak,      setStreak]      = useState(0);
+  const [playedToday,      setPlayedToday]      = useState(undefined);
+  const [streak,           setStreak]           = useState(0);
+  const [participantCount, setParticipantCount] = useState(null);
 
   const qStartRef    = useRef(Date.now());
   const selectingRef = useRef(false);
@@ -104,6 +105,7 @@ export default function Quiz() {
     const stored = localStorage.getItem(lsKey);
     if (stored) { setPlayedToday(JSON.parse(stored)); setPhase("board"); }
     else        { setPlayedToday(null); }
+    getDailyParticipantCount(category).then(setParticipantCount).catch(() => {});
   }, []);
 
   // Leaderboard lazy-load
@@ -113,7 +115,7 @@ export default function Quiz() {
     setBoardLoading(true);
     getLeaderboard(boardTab, category)
       .then(data => setBoard(p=>({...p,[boardTab]:data})))
-      .catch(()   => setBoard(p=>({...p,[boardTab]:[]})))
+      .catch(()   => setBoard(p=>({...p,[boardTab]:{ rows: [], uniqueCount: 0 }})))
       .finally(() => setBoardLoading(false));
   }, [phase, boardTab]);
 
@@ -225,6 +227,9 @@ export default function Quiz() {
               </div>
             )}
             <p className="qz-desc">{meta.desc}</p>
+            {participantCount > 0 && (
+              <p className="qz-participants">bugün {participantCount} kişi katıldı</p>
+            )}
             <div className="qz-field">
               <label className="qz-label">takma adın</label>
               {editingName || !username ? (
@@ -368,14 +373,16 @@ export default function Quiz() {
             <div className={`qz-list${boardTab!=="daily"?" qz-list--wide":""}`}>
               {boardLoading||board[boardTab]===undefined ? (
                 <p className="qz-empty">yükleniyor…</p>
-              ) : board[boardTab].length===0 ? (
+              ) : board[boardTab].rows.length===0 ? (
                 <p className="qz-empty">henüz kayıt yok.</p>
               ) : (()=>{
+                const { rows, uniqueCount } = board[boardTab];
                 const acc = (r) => r.total > 0 ? r.correct / r.total : 0;
-                const sorted = [...board[boardTab]].sort((a,b) =>
+                const sorted = [...rows].sort((a,b) =>
                   boardSort==="accuracy" ? acc(b)-acc(a) : b.score-a.score
                 );
                 return (<>
+                  <p className="qz-participants">{uniqueCount} farklı kişi katıldı</p>
                   {boardTab==="daily"
                     ? <div className="qz-list-head"><span>#</span><span>kullanıcı</span><span>puan</span><span>d/t</span></div>
                     : <div className="qz-list-head"><span>#</span><span>kullanıcı</span><span>puan</span><span>%</span><span>oyun</span></div>

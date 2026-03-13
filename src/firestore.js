@@ -55,7 +55,9 @@ function seededShuffle(arr, seed) {
 export async function getDailyQuestions(count = 10) {
   if (!_questionsCache.data) {
     const snap = await getDocs(collection(db, "quiz_questions"));
-    _questionsCache.data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    _questionsCache.data = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.id < b.id ? -1 : 1)); // stabil sıralama
   }
   const today = new Date(Date.now() + 3 * 60 * 60 * 1000);
   const seed =
@@ -68,40 +70,45 @@ export async function getDailyQuestions(count = 10) {
 const _flagCache    = { data: null };
 const _categoryCache = {};
 
-// Difficulty-weighted selection for any category that has difficulty fields
-export async function getDailyCategoryQuestions(category, count = 10) {
+// ID'ye göre sırala — yeni soru eklenince aynı günün seçimi değişmez
+function sortById(arr) {
+  return [...arr].sort((a, b) => (a.id < b.id ? -1 : 1));
+}
+
+// Dağılım: 1 kolay · 3 orta · 2 orta-zor · 2 zor · 2 çok zor = 10
+function pickByDifficulty(all, seed) {
+  const easy       = sortById(all.filter((q) => q.difficulty === "easy"));
+  const medium     = sortById(all.filter((q) => q.difficulty === "medium"));
+  const mediumHard = sortById(all.filter((q) => q.difficulty === "medium_hard"));
+  const hard       = sortById(all.filter((q) => q.difficulty === "hard"));
+  const veryHard   = sortById(all.filter((q) => q.difficulty === "very_hard"));
+
+  const hasDiff = easy.length + medium.length + mediumHard.length + hard.length + veryHard.length > 0;
+  if (!hasDiff) return seededShuffle(sortById(all), seed).slice(0, 10);
+
+  const picked = [
+    ...seededShuffle(easy,       seed    ).slice(0, Math.min(1, easy.length)),
+    ...seededShuffle(medium,     seed + 1).slice(0, Math.min(3, medium.length)),
+    ...seededShuffle(mediumHard, seed + 2).slice(0, Math.min(2, mediumHard.length)),
+    ...seededShuffle(hard,       seed + 3).slice(0, Math.min(2, hard.length)),
+    ...seededShuffle(veryHard,   seed + 4).slice(0, Math.min(2, veryHard.length)),
+  ];
+  return seededShuffle(picked, seed + 5);
+}
+
+export async function getDailyCategoryQuestions(category) {
   if (!_categoryCache[category]) {
     const snap = await getDocs(
       query(collection(db, "quiz_questions"), where("category", "==", category))
     );
     _categoryCache[category] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   }
-  const all      = _categoryCache[category];
-  const easy     = all.filter((q) => q.difficulty === "easy");
-  const medium   = all.filter((q) => q.difficulty === "medium");
-  const hard     = all.filter((q) => q.difficulty === "hard");
-  const veryHard = all.filter((q) => q.difficulty === "very_hard");
-
   const today = new Date(Date.now() + 3 * 60 * 60 * 1000);
   const seed  =
     today.getUTCFullYear() * 10000 +
     (today.getUTCMonth() + 1) * 100 +
     today.getUTCDate();
-
-  if (!easy.length && !medium.length && !hard.length && !veryHard.length) {
-    return seededShuffle(all, seed).slice(0, count);
-  }
-  const eCount  = Math.min(2, easy.length);
-  const mCount  = Math.min(3, medium.length);
-  const hCount  = Math.min(3, hard.length);
-  const vhCount = Math.min(2, veryHard.length);
-  const picked = [
-    ...seededShuffle(easy,     seed).slice(0, eCount),
-    ...seededShuffle(medium,   seed + 1).slice(0, mCount),
-    ...seededShuffle(hard,     seed + 2).slice(0, hCount),
-    ...seededShuffle(veryHard, seed + 3).slice(0, vhCount),
-  ];
-  return seededShuffle(picked, seed + 4);
+  return pickByDifficulty(_categoryCache[category], seed);
 }
 
 export async function getDailyFlagQuestions() {
@@ -111,25 +118,12 @@ export async function getDailyFlagQuestions() {
     );
     _flagCache.data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   }
-  const all      = _flagCache.data;
-  const easy     = all.filter((q) => q.difficulty === "easy");
-  const medium   = all.filter((q) => q.difficulty === "medium");
-  const hard     = all.filter((q) => q.difficulty === "hard");
-  const veryHard = all.filter((q) => q.difficulty === "very_hard");
-
   const today = new Date(Date.now() + 3 * 60 * 60 * 1000);
   const seed  =
     today.getUTCFullYear() * 10000 +
     (today.getUTCMonth() + 1) * 100 +
     today.getUTCDate();
-
-  const picked = [
-    ...seededShuffle(easy,     seed).slice(0, 2),
-    ...seededShuffle(medium,   seed + 1).slice(0, 3),
-    ...seededShuffle(hard,     seed + 2).slice(0, 3),
-    ...seededShuffle(veryHard, seed + 3).slice(0, 2),
-  ];
-  return seededShuffle(picked, seed + 4);
+  return pickByDifficulty(_flagCache.data, seed);
 }
 
 // UTC+3 (Türkiye) bazlı tarih anahtarı
@@ -149,6 +143,19 @@ function weekCutoffTR() {
 function yearCutoffTR() {
   const year = new Date(Date.now() + 3 * 60 * 60 * 1000).getUTCFullYear();
   return `${year}-01-01`;
+}
+
+// ── Quiz: Today's unique participant count ────────────────────────────────────
+export async function getDailyParticipantCount(category = "genel-kultur") {
+  const todayStr = dateKeyTR();
+  const q = query(
+    collection(db, "quiz_scores"),
+    where("category", "==", category),
+    where("dateKey", "==", todayStr)
+  );
+  const snap = await getDocs(q);
+  const usernames = new Set(snap.docs.map((d) => d.data().username));
+  return usernames.size;
 }
 
 // ── Quiz: Submit score ────────────────────────────────────────────────────────
@@ -195,11 +202,12 @@ export async function getLeaderboard(period, category = "genel-kultur") {
   const raw = snap.docs.map((d) => d.data());
 
   if (period === "daily") {
+    const uniqueCount = new Set(raw.map((r) => r.username)).size;
     raw.sort((a, b) => b.score - a.score);
-    return raw.slice(0, 10);
+    return { rows: raw.slice(0, 10), uniqueCount };
   }
 
-  // weekly / yearly: aggregate per username
+  // weekly / alltime: aggregate per username
   const byUser = {};
   for (const s of raw) {
     const u = s.username;
@@ -211,5 +219,5 @@ export async function getLeaderboard(period, category = "genel-kultur") {
   }
   const agg = Object.values(byUser);
   agg.sort((a, b) => b.score - a.score);
-  return agg.slice(0, 10);
+  return { rows: agg.slice(0, 10), uniqueCount: agg.length };
 }
