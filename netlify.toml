@@ -1,10 +1,10 @@
 [build]
-  command = "npm run build"
+  command = "npx puppeteer browsers install chrome && npm run build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "20"
-  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "false"
+  PUPPETEER_CACHE_DIR = "/opt/buildhome/.cache/puppeteer"
 
 # SPA fallback — prerender olmayan rotalar için (örn. /quiz/:category)
 [[redirects]]
