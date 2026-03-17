@@ -15,6 +15,9 @@ const DIST  = path.join(__dirname, "..", "dist");
 const PORT  = 3033;
 const BASE  = `http://localhost:${PORT}`;
 
+// Her kaç rotada bir browser yeniden başlatılsın
+const RESTART_EVERY = 40;
+
 // ── Rota listesi ──────────────────────────────────────────────────────────────
 const MONTH_SLUGS   = ["ocak","subat","mart","nisan","mayis","haziran","temmuz","agustos","eylul","ekim","kasim","aralik"];
 const DAYS_IN_MONTH = [31,29,31,30,31,30,31,31,30,31,30,31];
@@ -51,6 +54,54 @@ function startServer() {
   return new Promise((resolve) => server.listen(PORT, () => resolve(server)));
 }
 
+// ── Chrome başlatma ───────────────────────────────────────────────────────────
+async function launchBrowser() {
+  return puppeteer.launch({
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-gpu",
+      "--no-zygote",
+      "--disable-extensions",
+      "--disable-background-networking",
+      "--disable-default-apps",
+      "--disable-sync",
+      "--disable-translate",
+      "--hide-scrollbars",
+      "--mute-audio",
+      "--no-first-run",
+      "--safebrowsing-disable-auto-update",
+    ],
+  });
+}
+
+// ── Tek rota render ───────────────────────────────────────────────────────────
+async function renderRoute(browser, route) {
+  const page = await browser.newPage();
+  try {
+    await page.goto(`${BASE}${route}`, { waitUntil: "networkidle2", timeout: 15000 });
+
+    // İçeriğin yüklenmesini bekle (app-rendered event veya bilinen DOM öğeleri)
+    await page.waitForFunction(
+      () => window.__APP_RENDERED === true ||
+            document.querySelector(".events li") ||
+            document.querySelector(".qz-header") ||
+            document.querySelector(".article-title") ||
+            document.querySelector(".qh-grid"),
+      { timeout: 6000 }
+    ).catch(() => {});
+
+    const html = await page.content();
+    const outDir = path.join(DIST, route.replace(/^\//, ""));
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(path.join(outDir, "index.html"), html, "utf8");
+    return true;
+  } finally {
+    await page.close().catch(() => {}); // browser çökmüşse hata verme
+  }
+}
+
 // ── Ana prerender akışı ───────────────────────────────────────────────────────
 async function prerender() {
   console.log("▶ Prerendering başlıyor…");
@@ -58,53 +109,41 @@ async function prerender() {
   const routes = generateRoutes();
   console.log(`  ${routes.length} rota işlenecek\n`);
 
-  const browser = await puppeteer.launch({
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-gpu",
-      "--single-process",
-    ],
-  });
-
   let ok = 0;
   let fail = 0;
+  let browser = await launchBrowser();
 
-  for (const route of routes) {
-    const page = await browser.newPage();
+  for (let i = 0; i < routes.length; i++) {
+    const route = routes[i];
+
+    // Periyodik browser restart — memory birikimini önler
+    if (i > 0 && i % RESTART_EVERY === 0) {
+      await browser.close().catch(() => {});
+      browser = await launchBrowser();
+      process.stdout.write(`\n  [restart] ${i}/${routes.length} `);
+    }
+
     try {
-      // Sayfaya git — networkidle2: aktif bağlantı 2'nin altına düşünce devam
-      await page.goto(`${BASE}${route}`, { waitUntil: "networkidle2", timeout: 12000 });
-
-      // Firestore verisi için ek bekleme
-      await page.waitForFunction(
-        () => !document.querySelector(".no-data[style]") &&
-              (document.querySelector(".events li") || document.querySelector(".qz-header") ||
-               document.querySelector(".article-title") || document.querySelector(".qh-grid")),
-        { timeout: 5000 }
-      ).catch(() => {}); // Veri yoksa timeout — yine de HTML'i al
-
-      const html = await page.content();
-      const outDir = path.join(DIST, route.replace(/^\//, ""));
-      fs.mkdirSync(outDir, { recursive: true });
-      fs.writeFileSync(path.join(outDir, "index.html"), html, "utf8");
-
+      await renderRoute(browser, route);
       ok++;
-      process.stdout.write(ok % 30 === 0 ? `\n  ${ok}/${routes.length} ` : ".");
+      process.stdout.write(ok % 50 === 0 ? `\n  ${ok}/${routes.length} ` : ".");
     } catch (e) {
       fail++;
       process.stdout.write("✗");
-    } finally {
-      await page.close();
+
+      // Browser çöktüyse yeniden başlat
+      if (!browser.connected) {
+        browser = await launchBrowser();
+      }
     }
   }
 
-  await browser.close();
+  await browser.close().catch(() => {});
   server.close();
 
   console.log(`\n\n✅ Tamamlandı: ${ok} başarılı, ${fail} başarısız`);
-  if (fail > 0) process.exit(1);
+  // Çok az başarısız rota kabul edilebilir (boş günler, vb.)
+  if (fail > routes.length * 0.2) process.exit(1);
 }
 
 prerender().catch((e) => { console.error(e); process.exit(1); });

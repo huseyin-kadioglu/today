@@ -137,10 +137,12 @@ function MainApp() {
       .then((data) => {
         setEvents(data);
         setLoading(false);
+        window.__APP_RENDERED = true;
         document.dispatchEvent(new Event("app-rendered"));
       })
       .catch(() => {
         setLoading(false);
+        window.__APP_RENDERED = true;
         document.dispatchEvent(new Event("app-rendered"));
       });
   }, [day, month]);
