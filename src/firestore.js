@@ -15,6 +15,9 @@ const _questionsCache = { data: null };
 
 // ── Events ────────────────────────────────────────────────────────────────────
 export async function getEvents(date) {
+  if (typeof window !== "undefined" && window.__PRELOADED_EVENTS__) {
+    return window.__PRELOADED_EVENTS__;
+  }
   if (_eventsCache[date]) return _eventsCache[date];
   const q = query(collection(db, "events"), where("date", "==", date));
   const snap = await getDocs(q);

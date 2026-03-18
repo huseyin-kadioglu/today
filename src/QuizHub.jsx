@@ -27,6 +27,14 @@ const CATEGORIES = [
     href: "/quiz/baskentler",
     active: true,
   },
+  {
+    id: "mitoloji",
+    title: "Mitoloji",
+    desc: "10 soru · 25 saniye · günde 1 hak",
+    icon: "⚡",
+    href: "/quiz/mitoloji",
+    active: true,
+  },
 ];
 
 export default function QuizHub() {

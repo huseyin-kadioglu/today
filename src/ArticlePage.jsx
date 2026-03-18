@@ -3,9 +3,17 @@ import { useEffect } from "react";
 
 /* Makale modülleri — yeni makale ekledikçe buraya ekle */
 import article10Kasim from "./articles/10-kasim.js";
+import article29Ekim  from "./articles/29-ekim.js";
+import article23Nisan from "./articles/23-nisan.js";
+import article19Mayis from "./articles/19-mayis.js";
+import article18Mart  from "./articles/18-mart.js";
 
 const ARTICLES = {
   "10-kasim": article10Kasim,
+  "29-ekim":  article29Ekim,
+  "23-nisan": article23Nisan,
+  "19-mayis": article19Mayis,
+  "18-mart":  article18Mart,
 };
 
 export const ALL_ARTICLES = Object.values(ARTICLES);

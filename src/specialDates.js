@@ -18,17 +18,23 @@ export const SPECIAL_DATES = {
     subtitle: "Türkiye Cumhuriyeti'nin 101. yılı kutlu olsun.",
     articleSlug: "29-ekim",
   },
-  "1903": {
+  "1803": {
     theme: "celebration",
     title: "18 Mart Çanakkale Zaferi",
     subtitle: "Çanakkale geçilmez.",
-    articleSlug: null,
+    articleSlug: "18-mart",
+  },
+  "2304": {
+    theme: "celebration",
+    title: "23 Nisan Ulusal Egemenlik ve Çocuk Bayramı",
+    subtitle: "Egemenlik kayıtsız şartsız milletindir.",
+    articleSlug: "23-nisan",
   },
   "1905": {
     theme: "celebration",
     title: "19 Mayıs Atatürk'ü Anma",
     subtitle: "Gençlik ve Spor Bayramı kutlu olsun.",
-    articleSlug: null,
+    articleSlug: "19-mayis",
   },
   "3008": {
     theme: "celebration",
