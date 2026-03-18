@@ -106,17 +106,20 @@ async function renderRoute(browser, route, eventsMap) {
       }
     }
 
-    await page.goto(`${BASE}${route}`, { waitUntil: "networkidle2", timeout: 15000 });
+    await page.goto(`${BASE}${route}`, { waitUntil: "domcontentloaded", timeout: 15000 });
 
-    // İçeriğin yüklenmesini bekle (app-rendered event veya bilinen DOM öğeleri)
-    await page.waitForFunction(
-      () => window.__APP_RENDERED === true ||
-            document.querySelector(".events li") ||
-            document.querySelector(".qz-header") ||
-            document.querySelector(".article-title") ||
-            document.querySelector(".qh-grid"),
-      { timeout: eventsMap ? 4000 : 10000 }
-    ).catch(() => {});
+    // Rota tipine göre ilgili DOM elemanının belirmesini bekle
+    if (dateMatch) {
+      // .events → loading=false olunca render edilir (boş olsa bile)
+      await page.waitForSelector(".events", { timeout: eventsMap ? 5000 : 12000 }).catch(() => {});
+    } else if (route === "/quiz") {
+      await page.waitForSelector(".qh-grid", { timeout: 5000 }).catch(() => {});
+    } else if (route.startsWith("/makale")) {
+      await page.waitForSelector(".article-title", { timeout: 5000 }).catch(() => {});
+    } else {
+      // /gizlilik, /makaleler, vb.
+      await new Promise((r) => setTimeout(r, 1500));
+    }
 
     const html = await page.content();
     const outDir = path.join(DIST, route.replace(/^\//, ""));
