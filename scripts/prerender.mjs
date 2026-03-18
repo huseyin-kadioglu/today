@@ -9,6 +9,8 @@ import fs     from "node:fs";
 import path   from "node:path";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer";
+import { initializeApp, cert } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST  = path.join(__dirname, "..", "dist");
@@ -29,7 +31,16 @@ function generateRoutes() {
       routes.push(`/${String(d).padStart(2, "0")}-${slug}`);
     }
   });
-  routes.push("/quiz", "/makaleler", "/gizlilik", "/makale/10-kasim");
+  routes.push(
+    "/quiz",
+    "/makaleler",
+    "/gizlilik",
+    "/makale/10-kasim",
+    "/makale/29-ekim",
+    "/makale/23-nisan",
+    "/makale/19-mayis",
+    "/makale/18-mart",
+  );
   return routes;
 }
 
@@ -77,9 +88,24 @@ async function launchBrowser() {
 }
 
 // ── Tek rota render ───────────────────────────────────────────────────────────
-async function renderRoute(browser, route) {
+async function renderRoute(browser, route, eventsMap) {
   const page = await browser.newPage();
   try {
+    // Tarih rotaları için preloaded events enjekte et
+    const dateMatch = route.match(/^\/(\d{2})-(\w+)$/);
+    if (dateMatch && eventsMap) {
+      const [, dd, slug] = dateMatch;
+      const monthIndex = MONTH_SLUGS.indexOf(slug);
+      if (monthIndex !== -1) {
+        const mm = String(monthIndex + 1).padStart(2, "0");
+        const dateKey = `${dd}${mm}`;
+        const eventsForDate = eventsMap[dateKey] ?? [];
+        await page.evaluateOnNewDocument((data) => {
+          window.__PRELOADED_EVENTS__ = data;
+        }, eventsForDate);
+      }
+    }
+
     await page.goto(`${BASE}${route}`, { waitUntil: "networkidle2", timeout: 15000 });
 
     // İçeriğin yüklenmesini bekle (app-rendered event veya bilinen DOM öğeleri)
@@ -89,7 +115,7 @@ async function renderRoute(browser, route) {
             document.querySelector(".qz-header") ||
             document.querySelector(".article-title") ||
             document.querySelector(".qh-grid"),
-      { timeout: 6000 }
+      { timeout: eventsMap ? 4000 : 10000 }
     ).catch(() => {});
 
     const html = await page.content();
@@ -105,6 +131,40 @@ async function renderRoute(browser, route) {
 // ── Ana prerender akışı ───────────────────────────────────────────────────────
 async function prerender() {
   console.log("▶ Prerendering başlıyor…");
+
+  // Firebase-admin başlat ve tüm events'i önceden çek
+  let eventsMap = null;
+  try {
+    let saRaw;
+    if (process.env.FIREBASE_SA_JSON) {
+      console.log("  FIREBASE_SA_JSON env var bulundu, decode ediliyor…");
+      saRaw = Buffer.from(process.env.FIREBASE_SA_JSON, "base64").toString("utf8");
+    } else {
+      const saPath = path.join(__dirname, "serviceAccountKey.json");
+      console.log(`  Env var yok, local dosya okunuyor: ${saPath}`);
+      saRaw = fs.readFileSync(saPath, "utf8");
+    }
+    const sa = JSON.parse(saRaw);
+    console.log(`  Service account: ${sa.client_email}`);
+    initializeApp({ credential: cert(sa) });
+    const adminDb = getFirestore();
+    console.log("  Firestore bağlantısı kuruldu, events çekiliyor…");
+    const snap = await adminDb.collection("events").get();
+    eventsMap = {};
+    snap.forEach((doc) => {
+      const d = doc.data();
+      if (!eventsMap[d.date]) eventsMap[d.date] = [];
+      eventsMap[d.date].push(d);
+    });
+    for (const key of Object.keys(eventsMap)) {
+      eventsMap[key].sort((a, b) => a.year - b.year);
+    }
+    console.log(`  ✅ Firestore: ${Object.keys(eventsMap).length} tarih, ${snap.size} event yüklendi`);
+  } catch (e) {
+    console.error(`  ❌ Firestore başlatılamadı: ${e.message}`);
+    console.error("  → Prerender firebase-admin olmadan devam edecek (sayfalar boş olabilir)");
+  }
+
   const server = await startServer();
   const routes = generateRoutes();
   console.log(`  ${routes.length} rota işlenecek\n`);
@@ -124,7 +184,7 @@ async function prerender() {
     }
 
     try {
-      await renderRoute(browser, route);
+      await renderRoute(browser, route, eventsMap);
       ok++;
       process.stdout.write(ok % 50 === 0 ? `\n  ${ok}/${routes.length} ` : ".");
     } catch (e) {
