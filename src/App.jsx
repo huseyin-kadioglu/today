@@ -100,6 +100,7 @@ function MainApp() {
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [eventsReady, setEventsReady] = useState(false);
   const [day, setDay] = useState(null);
   const [month, setMonth] = useState(null);
   const [open, setOpen] = useState(false);
@@ -129,21 +130,28 @@ function MainApp() {
     }
   }, [location.pathname, navigate]);
 
+  /* DOM commit'ten SONRA Puppeteer'a sinyal ver */
+  useEffect(() => {
+    if (eventsReady) {
+      window.__APP_RENDERED = true;
+      document.dispatchEvent(new Event("app-rendered"));
+    }
+  }, [eventsReady]);
+
   /* DATA – Firestore'dan sadece o günün verisi */
   useEffect(() => {
     if (!day || !month) return;
     setLoading(true);
+    setEventsReady(false);
     getEvents(`${day}${month}`)
       .then((data) => {
         setEvents(data);
         setLoading(false);
-        window.__APP_RENDERED = true;
-        document.dispatchEvent(new Event("app-rendered"));
+        setEventsReady(true);
       })
       .catch(() => {
         setLoading(false);
-        window.__APP_RENDERED = true;
-        document.dispatchEvent(new Event("app-rendered"));
+        setEventsReady(true);
       });
   }, [day, month]);
 
