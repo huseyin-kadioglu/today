@@ -106,22 +106,45 @@ async function renderRoute(browser, route, eventsMap) {
       }
     }
 
+    // Sayfa JS hatalarını yakala
+    page.on("pageerror", (err) => {
+      process.stdout.write(`\n  ⚠ JS error on ${route}: ${err.message} `);
+    });
+
     await page.goto(`${BASE}${route}`, { waitUntil: "domcontentloaded", timeout: 15000 });
 
     // Rota tipine göre ilgili DOM elemanının belirmesini bekle
+    let selectorFound = true;
     if (dateMatch) {
       // .events → loading=false olunca render edilir (boş olsa bile)
-      await page.waitForSelector(".events", { timeout: eventsMap ? 5000 : 12000 }).catch(() => {});
+      selectorFound = await page.waitForSelector(".events", { timeout: eventsMap ? 6000 : 12000 })
+        .then(() => true).catch(() => false);
     } else if (route === "/quiz") {
-      await page.waitForSelector(".qh-grid", { timeout: 5000 }).catch(() => {});
+      selectorFound = await page.waitForSelector(".qh-grid", { timeout: 6000 })
+        .then(() => true).catch(() => false);
     } else if (route.startsWith("/makale")) {
-      await page.waitForSelector(".article-title", { timeout: 5000 }).catch(() => {});
+      selectorFound = await page.waitForSelector(".article-title", { timeout: 6000 })
+        .then(() => true).catch(() => false);
     } else {
       // /gizlilik, /makaleler, vb.
       await new Promise((r) => setTimeout(r, 1500));
     }
 
+    // Selector bulunamadıysa uyar
+    if (!selectorFound) {
+      process.stdout.write(`\n  ⚠ selector timeout: ${route} `);
+    }
+
+    // React'ın DOM'u tamamen settle etmesi için kısa bekleme
+    await new Promise((r) => setTimeout(r, 80));
+
     const html = await page.content();
+
+    // Boş root div kontrolü
+    if (html.includes('id="root"></div>') || html.includes("id='root'></div>")) {
+      process.stdout.write(`\n  ✗ EMPTY ROOT: ${route} `);
+    }
+
     const outDir = path.join(DIST, route.replace(/^\//, ""));
     fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(path.join(outDir, "index.html"), html, "utf8");
